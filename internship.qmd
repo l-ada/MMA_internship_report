@@ -1,0 +1,34 @@
+---
+title: Internship report
+author: Lukasz Adamowicz
+---
+
+# Lab presentration:
+
+## Math part
+
+### Implicit 
+1. Implicit funciton theorem
+
+2. IFT with constraints
+
+3. Lagrangian approach?
+
+4. Proof of IFT with constraints converging
+
+### Equilibrium propagation
+
+1. Statement
+
+2. Proof
+
+3. EqProp with constraints
+
+4. Proof of convergence
+
+
+## Implementation
+
+1. Stability techniques
+
+2. algorithm
