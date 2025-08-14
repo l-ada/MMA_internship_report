@@ -19,14 +19,31 @@
 \section{ Lab presentration}
 
  \section{Math part}
+Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p$ density coefficients.
 
  \subsection{Implicit}
 1. Implicit funciton theorem
-\[\argmin_p E(w,M,p)\]
 
-2. IFT with constraints
+The goal of the project was to investigate and minimize the following loss
+\begin{equation}
+ \min_\theta \mathcal{L}(p_{\theta}),
+\end{equation}
+where
+\begin{equation}
+  p_\theta:=\argmin_p E(\theta,p)
+\end{equation}
+and $\mathcal{L}$ is the standard $L_2$ loss.
+This falls under the domain of \textbf{bilevel optimization}.
+
+\subsubsection{ IFT with constraints}
+Let $w$ be a non-zero vector.
 
 3. Lagrangian approach?
+
+TK COME BACK WHEN YOU ACTUALLY DO IT BY HAND
+ \begin{equation}
+\min_{\lambda,\theta} L
+ \end{equation}
 
 4. Proof of IFT with constraints converging
 
@@ -60,4 +77,5 @@
 
 
 \section{Appendices}
+\subsection{Proof of equilibrium propagation formula}
 \end{document}
