@@ -21,37 +21,98 @@ SciAi groups research focus is on ...
 
  \section{Math part}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p\in \R^n$ density coefficients.
+TK $p$ DIMENSION DEPENDS ON N $M$
 
  \subsection{Implicit}
 1. Implicit funciton theorem
 
-The goal of the project was to investigate and minimize the following loss based on an approach in \cite{neuralscf}.
+The goal of the project was to investigate and minimize the following loss
 \begin{equation}
- \min_\theta \mathcal{L}(p_{\theta}),
+ \min_\theta \sum_i \mathcal{L}(p_{\theta}^{M_i}),
 \end{equation}
 where
 \begin{equation}
-  p_\theta:=\argmin_p E(\theta,p)
+  p_\theta^{M_i}:=\argmin_{p : \inner{w}{p}=N_i} E(\theta,M_i,p)
 \end{equation}
-and $\mathcal{L}(p) = \frac{1}{2}\mse{p-p_{data}}$ is the standard $L_2$ loss.
+and $\mathcal{L}_{M_i}(p) = \frac{1}{2}\mse{p-p_{M_i}}$ is the standard $L_2$ loss.
+
+In the rest of the report I will drop index $M_i$, since it the loss is a sum of individual losses for each molecule and it will notably simplify the notation.
+Therefore I will write $E(\theta,p)$ instead of $E(\theta,M,p)$ and the same for $p_\theta$, $\mathcal{L}(p)$ and so on.
+
 This falls under the domain of \textbf{bilevel optimization}.
 
 The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$
 
 
-\subsubsection{ IFT with constraints}
+\subsubsection{ IFT for one molecule}
 Let $w$ be a non-zero vector.
 We consider the constrained problem of minimizing
 
 \begin{equation}
- \mathcal{L}(p_\theta),
+ \min_\theta \mathcal{L}(p_\theta),
 \end{equation}
 where
 \begin{equation}
- p_\theta = \argmin_{p: \inner{p}{w}=N} E(\theta, p, w)
+ p_\theta = \argmin_{p: \inner{p}{w}=N} E(\theta, p)
 \end{equation}
 
+This can be accomplished by using implicit function theorem
 
+TK ADD STATEMENT
+
+TK DISCLAIMERS ABOUT APPLICABILITY, IT BEING A FUNCTION ETC, JACOBIAN
+
+TK DOES IT EVEN WORK IF IT'S NOT A FUNCTION
+\subsubsection{Derivation of the gradient}
+TK ADD SECTION FROM THE BLOG
+Before, we had
+$$\nabla_p E(w,p_w) = 0.$$
+This time it changes to
+$$P\big( \nabla_p E(w,p_w)\big)=0,$$
+where $P = Id - \frac{vv^T}{v^Tv},$ ie. operator $P$ is just a projection onto subspace $V_0 = \{p: \langle p,v \rangle = 0\}.$
+
+
+For any $u\in V_0$ we have $\langle \nabla_p E(w,p_w), u \rangle = 0$, since $p_w$ is the minimum of $E(w,p)$ restricted to $V$.
+
+
+But this means exactly that $P\big( \nabla_p E(w,p_w)\big)=0,$ since we can try $u = P\big( \nabla_p E(w,p_w)\big)$.
+
+Moreover $\langle \nabla_p E(w,p_w), P\big( \nabla_p E(w,p_w)\big) \rangle = \langle P\big( \nabla_p E(w,p_w)\big) , P\big( \nabla_p E(w,p_w)\big) \rangle$.
+
+Let's denote $F(w,p) =P (\nabla_pE(w,p)).$ Then the previous condition can be written as
+$$F(w,p_w) = 0.$$
+$$\frac{d p_w}{dw} = - \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial w}\bigg|_{p=p_w, w=w}.$$
+But the jacobian $\frac{\partial F}{\partial p}$ is not inversible. It can't be, since $F$ projects gradient onto subspace of lower dimension.
+
+Therefore, we also have to reformulate solving for $y$ vector
+
+$$y =- 2*(p_w-p_{true}) \cdot J^{-1}$$
+as a minimal square problem
+$$y = \underset{u}{\mathrm{argmin }}\|uJ + 2(p_w-p_{true})\|^2$$ and adjust accordingly, while computing it.
+
+
+$$ \frac{d}{dw} \nabla_p E(w,p_w) = 0.$$
+ Let's denote $F(w,p) = \nabla_p E(w,p)$ and let $J = J_{F}(p_w)=\frac{\partial F}{\partial p}$ be the jacobian of $F$ at $p = p_w$.
+We obtain
+
+$$\frac{d}{dw}F(w,p_w) = \frac{\partial F}{\partial w} + \frac{\partial F}{\partial p}\frac{d p_w}{dw}= 0 .$$
+
+**Remark** : We treat $p_w$ as a function of $w$, which may not be applicable for $E$.
+For example, there might be multiple minima.
+
+In the end, we obtain
+
+$$ \frac{d p_w}{dw} = - J^{-1} \frac{\partial F}{\partial w}.$$
+
+Thus,
+
+$$\frac{d J}{dw} = 2*(p_w-p_{true})\cdot \frac{d p_w}{dw} = 2*(p_w-p_{true})\cdot (-J^{-1}) \frac{\partial F}{\partial w}.$$
+
+The usual way to deal with this equation is to solve
+
+$$y =- 2*(p_w-p_{true}) \cdot J^{-1}$$
+or equivalently
+$$ yJ = -2*(p_w - p_{true}),$$ which is just a linear system of equations.
 
 3. Lagrangian approach?
 
