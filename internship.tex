@@ -6,7 +6,11 @@
 \author{Łukasz Adamowicz}
 
 \usepackage{mathcommands}
+\usepackage{amsthm}
 
+\newtheorem{theorem}{Theorem}
+\newtheorem{statement}{Statement}
+\newtheorem{lemma}{Lemma}
 
 \begin{document}
 \maketitle
@@ -18,6 +22,9 @@
 
 \section{ Lab presentation}
 SciAi groups research focus is on ...
+
+TK
+We assume $E(\theta, p)$ is ??? differentiable/continuous
 
  \section{Math part}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p\in \R^n$ density coefficients.
@@ -59,60 +66,66 @@ where
 This can be accomplished by using implicit function theorem
 
 TK ADD STATEMENT
+\begin{theorem}[Implicit Function Theorem]
+Your theorem statement.
+\end{theorem}
+
 
 TK DISCLAIMERS ABOUT APPLICABILITY, IT BEING A FUNCTION ETC, JACOBIAN
 
 TK DOES IT EVEN WORK IF IT'S NOT A FUNCTION
 \subsubsection{Derivation of the gradient}
+
+
 TK ADD SECTION FROM THE BLOG
-Before, we had
-$$\nabla_p E(w,p_w) = 0.$$
-This time it changes to
-$$P\big( \nabla_p E(w,p_w)\big)=0,$$
-where $P = Id - \frac{vv^T}{v^Tv},$ ie. operator $P$ is just a projection onto subspace $V_0 = \{p: \langle p,v \rangle = 0\}.$
+\begin{statement}
+ Let $P := Id -\frac{ww^T}{w^Tw} $ be the projection operator onto subspace $V = \text{span}(w)^{\perp}$. Then the following equality is true
+ \begin{equation}
+  P\big(\nabla_p E(\theta, p_\theta)\big) = 0
+ \end{equation}
 
+\end{statement}
 
-For any $u\in V_0$ we have $\langle \nabla_p E(w,p_w), u \rangle = 0$, since $p_w$ is the minimum of $E(w,p)$ restricted to $V$.
+\begin{proof}
+  Since $p_\theta$ is the minimum of $E(\theta,p)$ restricted to $V$ we have \[\langle \nabla_p E(\theta,p_{\theta}), u \rangle = 0\] for any $u\in V$. Taking $u = P\big( \nabla_p E(\theta,p_\theta)\big)$ we obtain
+  \[\langle \nabla_p E(\theta,p_{\theta}), P\big( \nabla_p E(\theta,p_\theta)\big) \rangle = \norm{P\big( \nabla_p E(\theta,p_\theta)\big)}^2=0,\]
+  which conludes the proof.
+\end{proof}
 
-
-But this means exactly that $P\big( \nabla_p E(w,p_w)\big)=0,$ since we can try $u = P\big( \nabla_p E(w,p_w)\big)$.
-
-Moreover $\langle \nabla_p E(w,p_w), P\big( \nabla_p E(w,p_w)\big) \rangle = \langle P\big( \nabla_p E(w,p_w)\big) , P\big( \nabla_p E(w,p_w)\big) \rangle$.
-
-Let's denote $F(w,p) =P (\nabla_pE(w,p)).$ Then the previous condition can be written as
-$$F(w,p_w) = 0.$$
-$$\frac{d p_w}{dw} = - \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial w}\bigg|_{p=p_w, w=w}.$$
+Let's denote $F(\theta,p) =P (\nabla_p E(\theta,p)).$ Then the previous condition can be written as
+$$F(\theta,p_\theta) = 0.$$
+$$\frac{d p_\theta}{d\theta} = - \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.$$
 But the jacobian $\frac{\partial F}{\partial p}$ is not inversible. It can't be, since $F$ projects gradient onto subspace of lower dimension.
 
 Therefore, we also have to reformulate solving for $y$ vector
 
-$$y =- 2*(p_w-p_{true}) \cdot J^{-1}$$
+$$y =- 2*(p_\theta-p_{true}) \cdot J^{-1}$$
 as a minimal square problem
-$$y = \underset{u}{\mathrm{argmin }}\|uJ + 2(p_w-p_{true})\|^2$$ and adjust accordingly, while computing it.
+$$y = \underset{u}{\mathrm{argmin }}\|uJ + 2(p_\theta-p_{true})\|^2$$ and adjust accordingly, while computing it.
 
 
-$$ \frac{d}{dw} \nabla_p E(w,p_w) = 0.$$
- Let's denote $F(w,p) = \nabla_p E(w,p)$ and let $J = J_{F}(p_w)=\frac{\partial F}{\partial p}$ be the jacobian of $F$ at $p = p_w$.
+$$ \frac{d}{d\theta} \nabla_p E(\theta,p_\theta) = 0.$$
+ Let's denote $F(\theta,p) = \nabla_p E(\theta,p)$ and let $J = J_{F}(p_\theta)=\frac{\partial F}{\partial p}$ be the jacobian of $F$ at $p = p_\theta$.
 We obtain
 
-$$\frac{d}{dw}F(w,p_w) = \frac{\partial F}{\partial w} + \frac{\partial F}{\partial p}\frac{d p_w}{dw}= 0 .$$
+$$\frac{d}{d\theta}F(\theta,p_\theta) = \frac{\partial F}{\partial \theta} + \frac{\partial F}{\partial p}\frac{d p_\theta}{d\theta}= 0 .$$
 
-**Remark** : We treat $p_w$ as a function of $w$, which may not be applicable for $E$.
+**Remark** : We treat $p_\theta$ as a function of $\theta$, which may not be applicable for $E$.
 For example, there might be multiple minima.
 
 In the end, we obtain
 
-$$ \frac{d p_w}{dw} = - J^{-1} \frac{\partial F}{\partial w}.$$
+$$ \frac{d p_\theta}{d\theta} = - J^{-1} \frac{\partial F}{\partial \theta}.$$
 
 Thus,
 
-$$\frac{d J}{dw} = 2*(p_w-p_{true})\cdot \frac{d p_w}{dw} = 2*(p_w-p_{true})\cdot (-J^{-1}) \frac{\partial F}{\partial w}.$$
+$$\frac{d J}{d\theta} = 2*(p_\theta-p_{true})\cdot \frac{d p_\theta}{d\theta} = 2*(p_\theta-p_{true})\cdot (-J^{-1}) \frac{\partial F}{\partial \theta}.$$
 
 The usual way to deal with this equation is to solve
 
-$$y =- 2*(p_w-p_{true}) \cdot J^{-1}$$
+$$y =- 2*(p_\theta-p_{true}) \cdot J^{-1}$$
 or equivalently
-$$ yJ = -2*(p_w - p_{true}),$$ which is just a linear system of equations.
+$$ yJ = -2*(p_\theta - p_{true}),$$ which is just a linear system of equations.
 
 3. Lagrangian approach?
 
