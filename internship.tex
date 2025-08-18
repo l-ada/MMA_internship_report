@@ -27,9 +27,15 @@ SciAi groups research focus is on ...
 TK
 We assume $E(\theta, p)$ is ??? differentiable/continuous
 
+Electron density is approximated by a set of finite-dimensional  atom-centered function
+\begin{equation}
+ \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
+\end{equation}
+
+
 Representation of electron density
  \section{Math part}
-Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p\in \R^n$ density coefficients.
+Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
 TK $p$ DIMENSION DEPENDS ON N $M$
 
  \subsection{Implicit}
@@ -53,7 +59,7 @@ This falls under the domain of \textbf{bilevel optimization}.
 The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$
 
 
-\subsubsection{ IFT for one molecule}
+\subsubsection{IFT for one molecule}
 Let $w$ be a non-zero vector and $N>0$ a positive number.
 We consider the constrained problem of minimizing
 
@@ -62,13 +68,13 @@ We consider the constrained problem of minimizing
 \end{equation}
 where
 \begin{equation}
- p_\theta = \argmin_{p: \inner{p}{w}=N} E(\theta, p)
+\argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }}
 \end{equation}
 and
 \begin{equation}
  \mathcal{L}(p) = \frac{1}{2} \norm{p-p_{gs}}^2,
 \end{equation}
-where $p_{gs}$ are ground state density coefficiets given from the data.
+where $p_{gs}$ are ground state density coefficiets given from the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
 
 This can be accomplished by using implicit function theorem
 
@@ -77,6 +83,45 @@ TK ADD STATEMENT
 Your theorem statement.
 \end{theorem}
 
+\subsubsection{Basis dependent approach}
+TK find better notation
+
+First, let's consider the problem in an orthogonal basis containing $w$.
+Let the basis be $(e_1,\ldots, e_{n-1}, w)$.
+Let $\widetilde{E}(\theta, p) = E(\theta, p_{gs}+ p)$.
+
+
+
+For simplicity we drop the
+% General formula
+\begin{equation}
+ \dth{\mathcal{L}(\pth)} = \pd{\mathcal{L}}{p}\dth{\pth}.
+\end{equation}
+
+% total derivative
+\begin{equation}
+0=\dth{F(\theta, p_\theta)} = \pd{F}{\theta} + \pd{F}{p} \dth{\pth}.
+\end{equation}
+
+
+
+
+\begin{equation}
+ \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs})\bigg(\frac{\partial E}{\partial p}\bigg)^{-1}  \frac{\partial E}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+\end{equation}
+
+\begin{equation}
+ A := \frac{\partial E(\theta, p)}{\partial p}\bigg|_{p=p_\theta, \theta=\theta}
+\end{equation}
+
+Then following \cite{neuralscf}
+\begin{equation}
+ y = -(\pth-p_{gs})A^{-1}
+\end{equation}
+
+% END OF basis approach
+\subsubsection{Basis-free approach}
+% Gradient formula
 \begin{statement}
 The gradient of $\mathcal{L}(\pth)$ is equal to
  \begin{equation}
@@ -136,8 +181,11 @@ Therefore the full gradient of $\mathcal{L}(\pth)$ is equal to
                       \frac{\partial F}{\partial p} =\begin{bmatrix}
 A & 0 \\
 0 & 0
-\end{bmatrix}
+\end{bmatrix},
                      \end{equation}
+where $A$ is the jacobian of $\nabla_p E$ restricted to subspace $V$.
+
+
 
  $\pth = \sum_{i=1}^{n-1}p_i(\theta) e_i +  0 \cdot w$
 \end{remark}
