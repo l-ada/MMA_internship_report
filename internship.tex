@@ -37,6 +37,7 @@ Representation of electron density
  \section{Math part}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
 TK $p$ DIMENSION DEPENDS ON N $M$
+TK WHAT IS THE DIMENSION OF p?
 
  \subsection{Implicit}
 1. Implicit funciton theorem
@@ -97,27 +98,48 @@ For simplicity we drop the
 \begin{equation}
  \dth{\mathcal{L}(\pth)} = \pd{\mathcal{L}}{p}\dth{\pth}.
 \end{equation}
+Since
+\begin{equation}
+ \pth = \argmin_p E(\theta, p),
+\end{equation}
+it follows that
+\begin{equation}
+ \nabla_p E(\theta, \pth) = 0
+\end{equation}
+and by taking derivative wrt. $\theta$ we get
+
 
 % total derivative
 \begin{equation}
-0=\dth{F(\theta, p_\theta)} = \pd{F}{\theta} + \pd{F}{p} \dth{\pth}.
+0=\dth{E(\theta, p_\theta)} = \pd{E}{\theta} + \pd{E}{p} \dth{\pth}.
 \end{equation}
-
-
-
-
+Therefore
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs})\bigg(\frac{\partial E}{\partial p}\bigg)^{-1}  \frac{\partial E}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+ \dth{\pth} = -A^{-1} \pd{\nabla_p E}{\theta}(\theta, \pth),
 \end{equation}
+where
 
 \begin{equation}
  A := \frac{\partial E(\theta, p)}{\partial p}\bigg|_{p=p_\theta, \theta=\theta}
 \end{equation}
 
-Then following \cite{neuralscf}
+
 \begin{equation}
- y = -(\pth-p_{gs})A^{-1}
+ \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) A^{-1}  \frac{\partial \nabla_p E}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
 \end{equation}
+
+
+Then following \cite{neuralscf} we denote
+\begin{equation}
+ y = -(\pth-p_{gs})A^{-1}.
+\end{equation}
+The final gradient formula is
+\begin{equation}
+ \dth{\mathcal{L}(\pth)} = y \cdot \frac{\partial \nabla_p E}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+\end{equation}
+
+
+The quantity $\frac{\partial \nabla_p E}{\partial \theta}$ is obtained using automatic differentation and $y$ is a solution to linear system $yA = -(\pth-p_{gs})$. Solving for $y$ is done using matrix-free methods such as conjugate gradient method or plain gradient descent on square error loss $\mse{yA + \pth+p_{gs}}$ since $yA$ is vector-jacobian product, which also can be evaluated efficiently using automatic differentation. Since $E$ is ..., and a approximation of physical potential function, it's reasonable to assume that it is positive-definite.
 
 % END OF basis approach
 \subsubsection{Basis-free approach}
@@ -178,21 +200,32 @@ Therefore the full gradient of $\mathcal{L}(\pth)$ is equal to
  \end{equation}
 
  The jacobian matrix in the basis $(e_0,...,e_{n-1},w)$ can be written as \begin{equation}
-                      \frac{\partial F}{\partial p} =\begin{bmatrix}
+                      \frac{\partial F}{\partial p}\bigg|_{p=\pth} =\begin{bmatrix}
 A & 0 \\
 0 & 0
-\end{bmatrix},
+\end{bmatrix}.
                      \end{equation}
-where $A$ is the jacobian of $\nabla_p E$ restricted to subspace $V$.
 
 
 
  $\pth = \sum_{i=1}^{n-1}p_i(\theta) e_i +  0 \cdot w$
 \end{remark}
 
-as a minimal square problem
-$$y = \underset{u}{\mathrm{argmin }}\|uJ + 2(p_\theta-p_{true})\|^2$$ and adjust accordingly, while computing it.
+The solution to linear regression
+\begin{equation}
+ y = \underset{u\in \R^n}{\mathrm{argmin }}\bigg\|u \begin{bmatrix}
+A & 0 \\
+0 & 0
+\end{bmatrix} + (p_\theta-p_{true})\bigg\|^2
+\end{equation}
+is satisfied for any $y$ of the form
+\begin{equation}
+ y = P\big((\pth-p_{gs})\big)A^{-1} + \alpha w.
+\end{equation}
 
+To make $y$ unique we add a term such as $\inner{u}{w}^2$ or add additional constraints.
+
+TK w TERM SHOULD VANISH AFTER
 
 $$ \frac{d}{d\theta} \nabla_p E(\theta,p_\theta) = 0.$$
  Let's denote $F(\theta,p) = \nabla_p E(\theta,p)$ and let $J = J_{F}(p_\theta)=\frac{\partial F}{\partial p}$ be the jacobian of $F$ at $p = p_\theta$.
@@ -200,22 +233,7 @@ We obtain
 
 $$\frac{d}{d\theta}F(\theta,p_\theta) = \frac{\partial F}{\partial \theta} + \frac{\partial F}{\partial p}\frac{d p_\theta}{d\theta}= 0 .$$
 
-**Remark** : We treat $p_\theta$ as a function of $\theta$, which may not be applicable for $E$.
-For example, there might be multiple minima.
 
-In the end, we obtain
-
-$$ \frac{d p_\theta}{d\theta} = - J^{-1} \frac{\partial F}{\partial \theta}.$$
-
-Thus,
-
-$$\frac{d J}{d\theta} = 2*(p_\theta-p_{true})\cdot \frac{d p_\theta}{d\theta} = 2*(p_\theta-p_{true})\cdot (-J^{-1}) \frac{\partial F}{\partial \theta}.$$
-
-The usual way to deal with this equation is to solve
-
-$$y =- 2*(p_\theta-p_{true}) \cdot J^{-1}$$
-or equivalently
-$$ yJ = -2*(p_\theta - p_{true}),$$ which is just a linear system of equations.
 
 3. Lagrangian approach?
 
@@ -226,7 +244,7 @@ TK COME BACK WHEN YOU ACTUALLY DO IT BY HAND
 
 4. Proof of IFT with constraints converging
 
-5. Error analysis for both approximate fixed point and solving lineare equation
+5. Error analysis for both approximate fixed point and solving linear equation
 TK add section from Sacramento,Zuccheti
 \subsection{ Equilibrium propagation}
 
@@ -241,31 +259,17 @@ where $\beta \in \R$.
 \begin{equation}
 p_{\theta}^{\beta}:=\argmin_p H(\theta, p, \beta)
 \end{equation}
-and
-\begin{equation}
- G(\theta, \beta) = H(\theta, p_\theta^\beta, \beta).
-\end{equation}
+
 
 Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
 
-Statement:
-
-\begin{equation}
- \frac{d}{d\theta} \mathcal{L}(p_\theta) = \lim_{\beta \to 0} \frac{\pd{H}{\theta}(\theta, p_\theta^\beta, \beta)-\pd{H}{\theta}(\theta, p_\theta^0, 0) }{\beta}
+\begin{statement}[Equilibrium propagation formula]
+ \begin{equation}
+ \frac{d}{d\theta} \mathcal{L}(p_\theta) = \lim_{\beta \to 0} \frac{\pd{H}{\theta}(\theta, p_\theta^\beta, \beta)-\pd{H}{\theta}(\theta, p_\theta^0, 0) }{\beta} = \lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(H(\theta, p_\theta^\beta,\beta) - H(\theta, p_\theta^0, 0)\bigg).
 \end{equation}
-
-
-
-\begin{equation}
- \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
-\end{equation}
-
-
-
-
-
-
-2. Proof
+\end{statement}
+This formula can be used to numerically approximate the gradient of the loss function.
+Since $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies to $\pd{E}{\theta.}$
 
 3. EqProp with constraints
 
@@ -283,14 +287,26 @@ Statement:
 
 2. algorithm
 \section{Results}
-
+\subsection{Implicit function approach}
+\subsubsection{assuming symmetric second derivative}
+\subsubsection{one molecule}
+\subsubsection{Convergence thresholds}
 
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
 
 
-
 \section{Appendices}
-\subsection{Proof of equilibrium propagation formula}
+\appendix
+\section{Proof of Equilibrium Propagation formula}
+and
+\begin{equation}
+ G(\theta, \beta) := H(\theta, p_\theta^\beta, \beta).
+\end{equation}
+
+\begin{equation}
+ \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
+\end{equation}
+
 \end{document}
