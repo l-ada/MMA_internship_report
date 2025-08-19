@@ -86,7 +86,7 @@ and $\mathcal{L}_{M_i}(p) = \frac{1}{2}\mse{p-p_{M_i}}$ is the standard $L_2$ lo
 
 In the rest of the report I will drop index $M_i$, since the loss is a sum of individual losses for each molecule and it will notably simplify the notation.
 Therefore I will write $E(\theta,p)$ instead of $E(\theta,M,p)$ and the same for $p_\theta$, $\mathcal{L}(p)$ and so on.
-
+The quantity $\pth$ is a \textbf{fixed point}.
 This falls under the domain of \textbf{bilevel optimization}.
 
 The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$
@@ -326,7 +326,7 @@ TK add section from Sacramento,Zuccheti
 \subsection{ Equilibrium propagation}
 
 \subsubsection{Base version}
-During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}).
+During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}), which is an alternate method of computing the gradient with respect to model parameters.
 Let's denote
 \begin{equation}
 H(\theta, p, \beta) := \beta \mathcal{L}(p) + E(\theta, p),
@@ -346,11 +346,31 @@ Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
 \end{equation}
 \end{statement}
 This formula can be used to numerically approximate the gradient of the loss function.
-Since $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies to $\pd{E}{\theta.}$
+Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies to $\pd{E}{\theta}$, although the formula remains true is $\mathcal{L}$ is also a function of $\theta$. For example there might be regularization term added to $\mathcal{L}(p)$.
+
+\begin{proof} Let's denote
+ \begin{equation}
+ G(\theta, \beta) := H(\theta, p_\theta^\beta, \beta).
+\end{equation}
+Because $p_\theta^\beta$ is continuously differentiably \ref{ift}, $G$ is $C^2$ and by Schwarz's theorem second derivatives are symmetric, so
+\begin{equation}
+ \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} =\frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}.
+\end{equation}
+However
+TK, did I write it down on my blog?
+\begin{equation}
+ \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
+\end{equation}
+\end{proof}
 
 3. EqProp with constraints
 
 
+It turns out the formula remains the same if we change the fixed point definition to
+\begin{equation}
+ p_\theta^\beta = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} H(\theta, p, \beta)
+\end{equation}
+In this case
 
 4. Proof of convergence
 
@@ -379,13 +399,7 @@ Since $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies t
 \appendix
 \section{Proof of Equilibrium Propagation formula}
 and
-\begin{equation}
- G(\theta, \beta) := H(\theta, p_\theta^\beta, \beta).
-\end{equation}
 
-\begin{equation}
- \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
-\end{equation}
 \appendix
 % \appendixname{Proof of}
 \section{Proof of implicit function theorem}
