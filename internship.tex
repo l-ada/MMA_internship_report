@@ -6,9 +6,8 @@
 
 \usepackage{mathcommands}
 \usepackage{amsthm}
-\usepackage{algorithmicx}
+\usepackage{algorithm}
 \usepackage{algpseudocode}
-
 \newtheorem{theorem}{Theorem}
 \newtheorem{statement}{Statement}
 \newtheorem{lemma}{Lemma}
@@ -43,6 +42,7 @@
 TK make sure every equation is numbered
 During my internship at Hamprecht Lab I investigated training deep learning models using loss function that's defined in an implicit way. I tried two approaches,
 \end{abstract}
+
 
 \tableofcontents
 
@@ -264,7 +264,7 @@ algorithm
 
 
 \begin{algorithm}
-\caption{DDPM Training}
+\caption{Loss gradient computation}
 \begin{algorithmic}
 \Require Dataset $\{x_0^{(i)}\}$, noise schedule $\{\beta_t\}$
 \Repeat
