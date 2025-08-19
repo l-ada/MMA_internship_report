@@ -8,6 +8,8 @@
 \usepackage{amsthm}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
+\usepackage{hyperref}
+
 \newtheorem{theorem}{Theorem}
 \newtheorem{statement}{Statement}
 \newtheorem{lemma}{Lemma}
@@ -23,7 +25,7 @@
         \textbf{Name:} Ada Lovelace\\[1cm]
         \textbf{Internship Supervisor:} Alan Turing\\
         \textbf{Email:} alan.turing@company.com\\[1cm]
-        \textbf{Company/Host Laboratory:}\\
+        \textbf{Hosting institution:}\\
         Heidelberg University\\
         Interdisciplinary Center for Scientific Computing\\
         Hamprecht Lab\\[1cm]
@@ -64,6 +66,8 @@ Electron density is approximated by a set of finite-dimensional  atom-centered f
 Representation of electron density
 \section{Carried out work}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
+By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative with respect to argument $\theta$.
+
 TK $p$ DIMENSION DEPENDS ON N $M$
 TK WHAT IS THE DIMENSION OF p?
 
@@ -108,9 +112,17 @@ where $p_{gs}$ are ground state density coefficiens given by the data and satisf
 This can be accomplished by using implicit function theorem
 
 TK ADD STATEMENT
-\begin{theorem}[Implicit Function Theorem]
-Your theorem statement.
+I use the version of implicit function theorem from \cite{zucchet2022beyond}, which in turn is taken from \cite{dontchev2009implicit}.
+\begin{theorem}[Implicit Function Theorem, \cite{zucchet2022beyond} ]
+Let $G(\theta, p): \R^k \times \R^n \to \R^n$ be $C^1$ and $(\bar{\theta}, \bar{p})$ such that $G(\bar{\theta},\bar{p})=0$. If the jacobian
+$\pd{G}{p}(\bar{\theta},\bar{p})$ is non-singular, then there exists a open neighbourhood $U$ of $\bar{\theta} $ and a function $p(\theta):U \to \R^n$, such that $G(\theta, p(\theta)) = 0$. Moreover $p(\theta)$ is also differentiable with
+the  derivative given by
+\begin{equation}
+\pd{p}{\theta}= - \bigg(\pd{G}{p}(\theta, p(\theta))\bigg)^{-1} \frac{\partial^2 G}{\partial \theta \partial p}(\theta, p(\theta)).
+\end{equation}
+
 \end{theorem}
+In our case $G = \pd{E}{p}$. Since our model is $C^1$/smooth with respect to  arguments and the hessian of $E$ is ...
 
 \subsubsection{Basis dependent approach}
 TK find better notation
@@ -138,7 +150,7 @@ The gradient of $\mathcal{L}(\pth)$ is equal to
  \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1}  \frac{\partial  \nabla_p \widetilde{E}}{\partial \theta}
 \end{equation}
 \end{statement}
-\begin{proof}
+
 To obtain the gradient of the loss we start from chain rule
 \begin{equation}
  \dth{\mathcal{L}(\pth)} = \pd{\mathcal{L}}{p}\dth{\pth}.
@@ -147,8 +159,9 @@ Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pt
 % General formula
 
 \begin{statement}
+The gradient of $\pth$ is equal to
  \begin{equation}
-   \dth{\pth} = -A^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth)
+   \dth{\pth} = -\bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth)
  \end{equation}
 \end{statement}
 
@@ -166,17 +179,18 @@ By taking derivative with respect to $\theta$, we get
 \end{equation}
 Therefore
 \begin{equation}
- \dth{\pth} = -A^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth),
+ \dth{\pth} = -\bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth).
 \end{equation}
-where
+
+Let's denote the hessian of $\widetilde{E}$ as
 
 \begin{equation}
- A := \frac{\partial \widetilde{E}(\theta, p)}{\partial p}\bigg|_{p=p_\theta, \theta=\theta}
+ H := \bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)(\theta,\pth) = H_{\widetilde{E}}(\theta,\pth)
 \end{equation}
 \end{proof}
 This gives us the final formula
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) A^{-1}  \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+ \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) H^{-1}  \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
 \end{equation}
 
 
@@ -188,7 +202,7 @@ This gives us the final formula
 % \begin{equation}
 %  \dth{\mathcal{L}(\pth)} = y \cdot \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
 % \end{equation}
-\end{proof}
+
 
 
 TK Maybe put somewhere else
@@ -250,7 +264,7 @@ Therefore the full gradient of $\mathcal{L}(\pth)$ is equal to
 
  The jacobian matrix in the basis $(e_0,...,e_{n-1},w)$ can be written as \begin{equation}
                       \frac{\partial F}{\partial p}\bigg|_{p=\pth} =\begin{bmatrix}
-A & 0 \\
+H & 0 \\
 0 & 0
 \end{bmatrix}.
                      \end{equation}
@@ -263,7 +277,7 @@ A & 0 \\
 The solution to linear regression
 \begin{equation}
  y = \underset{u\in \R^n}{\mathrm{argmin }}\bigg\|u \begin{bmatrix}
-A & 0 \\
+H & 0 \\
 0 & 0
 \end{bmatrix} + (p_\theta-p_{true})\bigg\|^2
 \end{equation}
@@ -271,7 +285,7 @@ is satisfied for by $y$ of the form
 
 TK RESOLVE DIMENSIONALITY NOTATION PROBLEMS. IS $P:R^n ->R^n-1$ or does is just put zero on the last component?
 \begin{equation}
- y = P\big((\pth-p_{gs})\big)A^{-1} + \alpha w.
+ y = P\big((\pth-p_{gs})\big)H^{-1} + \alpha w.
 \end{equation}
 Since $F$ is a projection onto plane perpendicular to $w$, it shouldn't matter which $y$ we choose.
 That is to say
@@ -357,7 +371,7 @@ Since $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies t
 \section{Conclusions}
 
 \nocite{*}
-\bibliographystyle{plain}
+\bibliographystyle{plainnat}
 \bibliography{references.bib}
 
 
