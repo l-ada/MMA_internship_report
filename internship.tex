@@ -2,39 +2,67 @@
 \usepackage[utf8]{inputenc}
 
 % Title Page
-\title{Investigation of implicit approach to loss function}
 \author{Łukasz Adamowicz}
 
 \usepackage{mathcommands}
 \usepackage{amsthm}
+\usepackage{algorithmicx}
+\usepackage{algpseudocode}
 
 \newtheorem{theorem}{Theorem}
 \newtheorem{statement}{Statement}
 \newtheorem{lemma}{Lemma}
 \newtheorem{remark}{Remark}
+\renewcommand{\thesection}{\arabic{section}}
 \begin{document}
-\maketitle
+% \maketitle
+\begin{titlepage}
+    \begin{center}
+        \textbf{\Large Title of Your Internship}\\[2cm]
+        \textbf{Academic Year:} 2024--2025\\
+        \textbf{Master's Program:} Mathématiques, Modélisation et Apprentissage\\
+        \textbf{Name:} Ada Lovelace\\[1cm]
+        \textbf{Internship Supervisor:} Alan Turing\\
+        \textbf{Email:} alan.turing@company.com\\[1cm]
+        \textbf{Company/Host Laboratory:}\\
+        Heidelberg University\\
+        Interdisciplinary Center for Scientific Computing\\
+        Hamprecht Lab\\[1cm]
+        \textbf{UFR Contact:}\\
+        Grace Hopper\\
+        grace.hopper@university.edu\\[2cm]
+
+        % Optionally add logos, date, etc.
+        \vfill
+        \today
+    \end{center}
+\end{titlepage}
+
 
 \begin{abstract}
 TK make sure every equation is numbered
+During my internship at Hamprecht Lab I investigated training deep learning models using loss function that's defined in an implicit way. I tried two approaches,
 \end{abstract}
 
+\tableofcontents
 
-
-\section{ Lab presentation}
+\section{Lab presentation}
 SciAi groups research focus is on ...
-
+The goal is to approximate energy functional...
+This would allow for computation of ... in complexity O(n) instead of ...
 TK
 We assume $E(\theta, p)$ is ??? differentiable/continuous
 
 Electron density is approximated by a set of finite-dimensional  atom-centered function
+
+
 \begin{equation}
  \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
 \end{equation}
 
 
 Representation of electron density
- \section{Math part}
+\section{Carried out work}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
 TK $p$ DIMENSION DEPENDS ON N $M$
 TK WHAT IS THE DIMENSION OF p?
@@ -218,21 +246,35 @@ A & 0 \\
 0 & 0
 \end{bmatrix} + (p_\theta-p_{true})\bigg\|^2
 \end{equation}
-is satisfied for any $y$ of the form
+is satisfied for by $y$ of the form
+
+TK RESOLVE DIMENSIONALITY NOTATION PROBLEMS. IS $P:R^n ->R^n-1$ or does is just put zero on the last component?
 \begin{equation}
  y = P\big((\pth-p_{gs})\big)A^{-1} + \alpha w.
 \end{equation}
+Since $F$ is a projection onto plane perpendicular to $w$, it shouldn't matter which $y$ we choose.
+That is to say
+\begin{equation}
+ \inner{y}{ \pd{F}{\theta}}=\inner{Py}{\pd{F}{\theta}}.
+\end{equation}
 
-To make $y$ unique we add a term such as $\inner{u}{w}^2$ or add additional constraints.
+% To make $y$ unique we add a term such as $\inner{u}{w}^2$ or add additional constraints.
 
-TK w TERM SHOULD VANISH AFTER
+algorithm
 
-$$ \frac{d}{d\theta} \nabla_p E(\theta,p_\theta) = 0.$$
- Let's denote $F(\theta,p) = \nabla_p E(\theta,p)$ and let $J = J_{F}(p_\theta)=\frac{\partial F}{\partial p}$ be the jacobian of $F$ at $p = p_\theta$.
-We obtain
 
-$$\frac{d}{d\theta}F(\theta,p_\theta) = \frac{\partial F}{\partial \theta} + \frac{\partial F}{\partial p}\frac{d p_\theta}{d\theta}= 0 .$$
-
+\begin{algorithm}
+\caption{DDPM Training}
+\begin{algorithmic}
+\Require Dataset $\{x_0^{(i)}\}$, noise schedule $\{\beta_t\}$
+\Repeat
+    \State $x_0 \sim q(x_0)$
+    \State $t \sim \text{Uniform}(\{1, \ldots, T\})$
+    \State $\epsilon \sim \mathcal{N}(0, I)$
+    \State Take gradient step on $\nabla_\theta \|\epsilon - \epsilon_\theta(\sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, t)\|^2$
+\Until{converged}
+\end{algorithmic}
+\end{algorithm}
 
 
 3. Lagrangian approach?
@@ -249,7 +291,7 @@ TK add section from Sacramento,Zuccheti
 \subsection{ Equilibrium propagation}
 
 \subsubsection{Base version}
-
+During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}).
 Let's denote
 \begin{equation}
 H(\theta, p, \beta) := \beta \mathcal{L}(p) + E(\theta, p),
@@ -278,7 +320,7 @@ Since $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies t
 4. Proof of convergence
 
 5. Error margins
-\section{ Implementation}
+\subsection{ Implementation}
 0. Technical details
     architecture
     training
@@ -286,11 +328,12 @@ Since $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies t
 1. Stability techniques
 
 2. algorithm
-\section{Results}
-\subsection{Implicit function approach}
+\subsection{Results}
+\subsubsection{Implicit function approach}
 \subsubsection{assuming symmetric second derivative}
 \subsubsection{one molecule}
 \subsubsection{Convergence thresholds}
+\section{Conclusions}
 
 \nocite{*}
 \bibliographystyle{plain}
@@ -308,5 +351,8 @@ and
 \begin{equation}
  \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
 \end{equation}
+\appendix
+% \appendixname{Proof of}
+\section{Proof of implicit function theorem}
 
 \end{document}
