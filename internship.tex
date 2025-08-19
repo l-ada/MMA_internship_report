@@ -63,7 +63,7 @@ Electron density is approximated by a set of finite-dimensional  atom-centered f
 
 Representation of electron density
 \section{Carried out work}
-Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
+Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
 TK $p$ DIMENSION DEPENDS ON N $M$
 TK WHAT IS THE DIMENSION OF p?
 
@@ -80,7 +80,7 @@ where
 \end{equation}
 and $\mathcal{L}_{M_i}(p) = \frac{1}{2}\mse{p-p_{M_i}}$ is the standard $L_2$ loss.
 
-In the rest of the report I will drop index $M_i$, since it the loss is a sum of individual losses for each molecule and it will notably simplify the notation.
+In the rest of the report I will drop index $M_i$, since the loss is a sum of individual losses for each molecule and it will notably simplify the notation.
 Therefore I will write $E(\theta,p)$ instead of $E(\theta,M,p)$ and the same for $p_\theta$, $\mathcal{L}(p)$ and so on.
 
 This falls under the domain of \textbf{bilevel optimization}.
@@ -90,20 +90,20 @@ The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$
 
 \subsubsection{IFT for one molecule}
 Let $w$ be a non-zero vector and $N>0$ a positive number.
-We consider the constrained problem of minimizing
+We consider the problem of minimizing
 
 \begin{equation}
  \min_\theta \mathcal{L}(p_\theta),
 \end{equation}
-where
+with
 \begin{equation}
-\argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }}
+\pth = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} E(\theta, p)
 \end{equation}
 and
 \begin{equation}
  \mathcal{L}(p) = \frac{1}{2} \norm{p-p_{gs}}^2,
 \end{equation}
-where $p_{gs}$ are ground state density coefficiets given from the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
+where $p_{gs}$ are ground state density coefficiens given by the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
 
 This can be accomplished by using implicit function theorem
 
@@ -117,78 +117,99 @@ TK find better notation
 
 First, let's consider the problem in an orthogonal basis containing $w$.
 Let the basis be $(e_1,\ldots, e_{n-1}, w)$.
-Let $\widetilde{E}(\theta, p) = E(\theta, p_{gs}+ p)$.
+Let $\widetilde{E}(\theta, p) = E(\theta, p_{gs}+ p)$ and $p = \sum_{i=1}^{n-1} p_i e_i$.
+Then $\widetilde E(\theta, \cdot)$ is just $E$ restricted to affine space $p_{gs}+\text{ span} (w)^\perp$
+and the problem becomes
+\begin{equation}
+  \min_\theta \mathcal{L}(p_\theta),
+\end{equation}
 
 
+\begin{equation}
+ \pth = \argmin_{p\in \R^{n-1}} \widetilde{E}(\theta, p)
+\end{equation}
 
-For simplicity we drop the
-% General formula
+
+TK CHECK NOTATION FOR HESSIAN AND MIXED DERIVATIVE
+TK CHANGE symbol for A
+\begin{statement}
+The gradient of $\mathcal{L}(\pth)$ is equal to
+ \begin{equation}
+ \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1}  \frac{\partial  \nabla_p \widetilde{E}}{\partial \theta}
+\end{equation}
+\end{statement}
+\begin{proof}
+To obtain the gradient of the loss we start from chain rule
 \begin{equation}
  \dth{\mathcal{L}(\pth)} = \pd{\mathcal{L}}{p}\dth{\pth}.
 \end{equation}
-Since
+Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pth}.$
+% General formula
+
+\begin{statement}
+ \begin{equation}
+   \dth{\pth} = -A^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth)
+ \end{equation}
+\end{statement}
+
+\begin{proof}
+By definition $\widetilde{E}(\theta, \cdot)$ attains its minimum at $\pth$ it follows that
 \begin{equation}
- \pth = \argmin_p E(\theta, p),
+ \nabla_p \widetilde{E}(\theta, \pth) = 0.
 \end{equation}
-it follows that
-\begin{equation}
- \nabla_p E(\theta, \pth) = 0
-\end{equation}
-and by taking derivative wrt. $\theta$ we get
+By taking derivative with respect to $\theta$, we get
 
 
 % total derivative
 \begin{equation}
-0=\dth{E(\theta, p_\theta)} = \pd{E}{\theta} + \pd{E}{p} \dth{\pth}.
+0=\dth{\widetilde{E}(\theta, p_\theta)} = \pd{\widetilde{E}}{\theta} + \pd{\widetilde{E}}{p} \dth{\pth}.
 \end{equation}
 Therefore
 \begin{equation}
- \dth{\pth} = -A^{-1} \pd{\nabla_p E}{\theta}(\theta, \pth),
+ \dth{\pth} = -A^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth),
 \end{equation}
 where
 
 \begin{equation}
- A := \frac{\partial E(\theta, p)}{\partial p}\bigg|_{p=p_\theta, \theta=\theta}
+ A := \frac{\partial \widetilde{E}(\theta, p)}{\partial p}\bigg|_{p=p_\theta, \theta=\theta}
 \end{equation}
-
-
+\end{proof}
+This gives us the final formula
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) A^{-1}  \frac{\partial \nabla_p E}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+ \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) A^{-1}  \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
 \end{equation}
 
 
-Then following \cite{neuralscf} we denote
-\begin{equation}
- y = -(\pth-p_{gs})A^{-1}.
-\end{equation}
-The final gradient formula is
-\begin{equation}
- \dth{\mathcal{L}(\pth)} = y \cdot \frac{\partial \nabla_p E}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
-\end{equation}
+% Following \cite{neuralscf} we denote
+% \begin{equation}
+%  y = -(\pth-p_{gs})A^{-1}.
+% \end{equation}
+% The final gradient formula is
+% \begin{equation}
+%  \dth{\mathcal{L}(\pth)} = y \cdot \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+% \end{equation}
+\end{proof}
 
 
+TK Maybe put somewhere else
 The quantity $\frac{\partial \nabla_p E}{\partial \theta}$ is obtained using automatic differentation and $y$ is a solution to linear system $yA = -(\pth-p_{gs})$. Solving for $y$ is done using matrix-free methods such as conjugate gradient method or plain gradient descent on square error loss $\mse{yA + \pth+p_{gs}}$ since $yA$ is vector-jacobian product, which also can be evaluated efficiently using automatic differentation. Since $E$ is ..., and a approximation of physical potential function, it's reasonable to assume that it is positive-definite.
 
 % END OF basis approach
 \subsubsection{Basis-free approach}
 % Gradient formula
-\begin{statement}
-The gradient of $\mathcal{L}(\pth)$ is equal to
- \begin{equation}
- \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial \theta}
-\end{equation}
-\end{statement}
+% \begin{statement}
+% The gradient of $\mathcal{L}(\pth)$ is equal to
+%  \begin{equation}
+%  \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial \theta}
+% \end{equation}
+% \end{statement}
 
 
 TK DISCLAIMERS ABOUT APPLICABILITY, IT BEING A FUNCTION ETC, JACOBIAN
 
 TK DOES IT EVEN WORK IF IT'S NOT A FUNCTION
 \subsubsection{Derivation of the gradient}
-To obtain the gradient of the loss we start from chain rule
-\begin{equation}
- \dth{\mathcal{L}(\pth)} = \pd{\mathcal{L}}{p}\dth{\pth}.
-\end{equation}
-Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pth}.$ To this end we make use of the following lemma.
+ To this end we make use of the following lemma.
 
 \begin{lemma}
  Let $P := Id -\frac{ww^T}{w^Tw} $ be the projection operator onto subspace $V = \text{span}(w)^{\perp}$. Then the following equality is true
@@ -263,18 +284,18 @@ That is to say
 algorithm
 
 
-\begin{algorithm}
-\caption{Loss gradient computation}
-\begin{algorithmic}
-\Require Dataset $\{x_0^{(i)}\}$, noise schedule $\{\beta_t\}$
-\Repeat
-    \State $x_0 \sim q(x_0)$
-    \State $t \sim \text{Uniform}(\{1, \ldots, T\})$
-    \State $\epsilon \sim \mathcal{N}(0, I)$
-    \State Take gradient step on $\nabla_\theta \|\epsilon - \epsilon_\theta(\sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, t)\|^2$
-\Until{converged}
-\end{algorithmic}
-\end{algorithm}
+% \begin{algorithm}
+% \caption{Loss gradient computation}
+% \begin{algorithmic}
+% \Require Dataset $\{x_0^{(i)}\}$, noise schedule $\{\beta_t\}$
+% \Repeat
+%     \State $x_0 \sim q(x_0)$
+%     \State $t \sim \text{Uniform}(\{1, \ldots, T\})$
+%     \State $\epsilon \sim \mathcal{N}(0, I)$
+%     \State Take gradient step on $\nabla_\theta \|\epsilon - \epsilon_\theta(\sqrt{\bar{\alpha}_t}x_0 + \sqrt{1-\bar{\alpha}_t}\epsilon, t)\|^2$
+% \Until{converged}
+% \end{algorithmic}
+% \end{algorithm}
 
 
 3. Lagrangian approach?
