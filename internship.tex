@@ -28,7 +28,6 @@
         \textbf{Hosting institution:}\\
         Heidelberg University\\
         Interdisciplinary Center for Scientific Computing\\
-        Hamprecht Lab\\[1cm]
         \textbf{UFR Contact:}\\
         Grace Hopper\\
         grace.hopper@university.edu\\[2cm]
@@ -354,14 +353,44 @@ Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ 
 \end{equation}
 Because $p_\theta^\beta$ is continuously differentiably \ref{ift}, $G$ is $C^2$ and by Schwarz's theorem second derivatives are symmetric, so
 \begin{equation}
- \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} =\frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}.
+ \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} =\frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}
 \end{equation}
 However
 TK, did I write it down on my blog?
 \begin{equation}
  \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
 \end{equation}
+\begin{equation}
+ \frac{dG}{d\beta} = \frac{\partial H}{\partial \beta} + \frac{\partial H}{\partial p}(\theta,\pthb, \beta)\frac{\partial \pthb}{\partial \beta}
+\end{equation}
+By definition
+\begin{equation}
+\frac{\partial H}{\partial p}(\theta,\pthb, \beta)=0,
+\end{equation}
+so the second term vanishes leaving us with
+\begin{equation}
+  \frac{dG}{d\beta} = \frac{\partial H}{\partial \beta}
+\end{equation}
+
+\begin{equation}
+\frac{\partial H}{\partial \beta} = \mathcal{L}(p).
+\end{equation}
+
+Therefore
+\begin{equation}
+ \frac{dG}{d\beta}\big|_{\beta=0}= \mathcal{L}(\pth)
+\end{equation}
+Thus we obtain
+\begin{equation}
+ \frac{d}{d\theta} \mathcal{L}(p_\theta) =\frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} = \frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}
+\end{equation}
+and by definition
+
 \end{proof}
+
+
+
+
 
 3. EqProp with constraints
 
@@ -371,6 +400,7 @@ It turns out the formula remains the same if we change the fixed point definitio
  p_\theta^\beta = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} H(\theta, p, \beta)
 \end{equation}
 In this case
+
 
 4. Proof of convergence
 
