@@ -114,7 +114,7 @@ TK ADD STATEMENT
 I use the version of implicit function theorem from \cite{zucchet2022beyond}, which in turn is taken from \cite{dontchev2009implicit}.
 \begin{theorem}[Implicit Function Theorem, \cite{zucchet2022beyond} ]
 Let $G(\theta, p): \R^k \times \R^n \to \R^n$ be $C^1$ and $(\bar{\theta}, \bar{p})$ such that $G(\bar{\theta},\bar{p})=0$. If the jacobian
-$\pd{G}{p}(\bar{\theta},\bar{p})$ is non-singular, then there exists a open neighbourhood $U$ of $\bar{\theta} $ and a function $p(\theta):U \to \R^n$, such that $G(\theta, p(\theta)) = 0$. Moreover $p(\theta)$ is also differentiable with
+$\pd{G}{p}(\bar{\theta},\bar{p})$ is non-singular, then there exists an open neighbourhood $U$ of $\bar{\theta} $ and a function $p(\theta):U \to \R^n$, such that $G(\theta, p(\theta)) = 0$. Moreover $p(\theta)$ is also differentiable with
 the  derivative given by
 \begin{equation}
 \pd{p}{\theta}= - \bigg(\pd{G}{p}(\theta, p(\theta))\bigg)^{-1} \frac{\partial^2 G}{\partial \theta \partial p}(\theta, p(\theta)).
@@ -325,7 +325,7 @@ TK add section from Sacramento,Zuccheti
 \subsection{ Equilibrium propagation}
 
 \subsubsection{Base version}
-During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}), which is an alternate method of computing the gradient with respect to model parameters.
+During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}), which is an alternative method of computing the gradient with respect to model parameters.
 Let's denote
 \begin{equation}
 H(\theta, p, \beta) := \beta \mathcal{L}(p) + E(\theta, p),
@@ -335,9 +335,15 @@ where $\beta \in \R$.
 \begin{equation}
 p_{\theta}^{\beta}:=\argmin_p H(\theta, p, \beta)
 \end{equation}
+\begin{remark}
+ For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so $H$ has ... TK HOW TO WRITE should converge better
+
+ Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
+ \end{remark}
 
 
-Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
+
+
 
 \begin{statement}[Equilibrium propagation formula]
  \begin{equation}
@@ -351,61 +357,54 @@ Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ 
  \begin{equation}
  G(\theta, \beta) := H(\theta, p_\theta^\beta, \beta).
 \end{equation}
-Because $p_\theta^\beta$ is continuously differentiably \ref{ift}, $G$ is $C^2$ and by Schwarz's theorem second derivatives are symmetric, so
+Because $p_\theta^\beta$ is $C^2$, $G$ is $C^2$ and so we have the symmetry of second derivatives
 \begin{equation}
  \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} =\frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}
 \end{equation}
-However
-TK, did I write it down on my blog?
-\begin{equation}
- \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} = \frac{d}{d\theta} \mathcal{L}(p_\theta)
-\end{equation}
-\begin{equation}
- \frac{dG}{d\beta} = \frac{\partial H}{\partial \beta} + \frac{\partial H}{\partial p}(\theta,\pthb, \beta)\frac{\partial \pthb}{\partial \beta}
+We have
+
+\begin{equation}\label{eqcond}
+ \frac{dG}{d\beta} = \frac{\partial H}{\partial \beta} + \frac{\partial H}{\partial p}(\theta,\pthb, \beta)\frac{\partial \pthb}{\partial \beta}.
 \end{equation}
 By definition
 \begin{equation}
-\frac{\partial H}{\partial p}(\theta,\pthb, \beta)=0,
+\frac{\partial H}{\partial p}(\theta,\pthb, \beta)=0.
 \end{equation}
-so the second term vanishes leaving us with
-\begin{equation}
-  \frac{dG}{d\beta} = \frac{\partial H}{\partial \beta}
+The second term vanishes, leaving us with
+\begin{equation}\label{pvanish}
+  \frac{dG}{d\beta}\big|_{\beta=0} = \frac{\partial H}{\partial \beta}(\theta, \pth, 0)=\mathcal{L}(\pth).
+\end{equation}
+Analogically
+\begin{equation}\label{thvanish}
+ \frac{dG}{d\theta}=\frac{\partial H}{\partial \theta}(\theta, \pthb, \beta).
 \end{equation}
 
-\begin{equation}
-\frac{\partial H}{\partial \beta} = \mathcal{L}(p).
-\end{equation}
-
-Therefore
-\begin{equation}
- \frac{dG}{d\beta}\big|_{\beta=0}= \mathcal{L}(\pth)
-\end{equation}
-Thus we obtain
-\begin{equation}
- \frac{d}{d\theta} \mathcal{L}(p_\theta) =\frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} = \frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}
-\end{equation}
-and by definition
+TK Explain, why it's different iwe we switch back the order of derivatives.
+In the end we obtain
+\begin{align}
+ \frac{d}{d\theta} \mathcal{L}(p_\theta) &=\frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0}=\\
+ &=\lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(H(\theta, p_\theta^\beta,\beta) - H(\theta, p_\theta^0, 0)\bigg)
+\end{align}
 
 \end{proof}
 
-
-
-
-
-3. EqProp with constraints
-
-
-It turns out the formula remains the same if we change the fixed point definition to
+\begin{remark}
+ It turns out the formula remains the same if we change the fixed point definition to
 \begin{equation}
  p_\theta^\beta = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} H(\theta, p, \beta)
 \end{equation}
-In this case
+In this case equilibrium condition \ref{eqcond} changes to
+\begin{equation*}
+P\bigg(\frac{\partial H}{\partial p}(\theta,\pthb, \beta)\bigg)=0,
+\end{equation*}
+where, as before, $P$ is a projection operator. However since $\inner{w}{\pthb}$ is does not depend on $\beta$ nor $\theta$ both \ref{pvanish} and \ref{thvanish} stay the same and so the final also stays the same.
+
+\end{remark}
 
 
-4. Proof of convergence
 
 5. Error margins
-\subsection{ Implementation}
+\subsection{Implementation}
 0. Technical details
     architecture
     training
