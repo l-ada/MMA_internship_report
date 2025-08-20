@@ -70,7 +70,7 @@ By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes p
 TK $p$ DIMENSION DEPENDS ON N $M$
 TK WHAT IS THE DIMENSION OF p?
 
- \subsection{Implicit}
+ \subsection{Jacobian approach}
 1. Implicit funciton theorem
 
 The goal of the project was to investigate and minimize the following loss
@@ -209,18 +209,10 @@ The quantity $\frac{\partial \nabla_p E}{\partial \theta}$ is obtained using aut
 
 % END OF basis approach
 \subsubsection{Basis-free approach}
-% Gradient formula
-% \begin{statement}
-% The gradient of $\mathcal{L}(\pth)$ is equal to
-%  \begin{equation}
-%  \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial \theta}
-% \end{equation}
-% \end{statement}
+
+Since it's more natural to implement the algorithm
 
 
-TK DISCLAIMERS ABOUT APPLICABILITY, IT BEING A FUNCTION ETC, JACOBIAN
-
-TK DOES IT EVEN WORK IF IT'S NOT A FUNCTION
 \subsubsection{Derivation of the gradient}
  To this end we make use of the following lemma.
 
@@ -271,7 +263,8 @@ H & 0 \\
 
 
  $\pth = \sum_{i=1}^{n-1}p_i(\theta) e_i +  0 \cdot w$
-\end{remark}
+
+
 
 The solution to linear regression
 \begin{equation}
@@ -292,9 +285,14 @@ That is to say
  \inner{y}{ \pd{F}{\theta}}=\inner{Py}{\pd{F}{\theta}}.
 \end{equation}
 
+Therefore, the formula doesn't change, however we can't use algortihms such as conjugate gradient, since they rely on positive-definiteness of the matrix.
+\end{remark}
 % To make $y$ unique we add a term such as $\inner{u}{w}^2$ or add additional constraints.
 
-algorithm
+
+
+
+TK algorithm
 
 
 % \begin{algorithm}
@@ -317,8 +315,6 @@ TK COME BACK WHEN YOU ACTUALLY DO IT BY HAND
  \begin{equation}
 \min_{\lambda,\theta} L
  \end{equation}
-
-4. Proof of IFT with constraints converging
 
 5. Error analysis for both approximate fixed point and solving linear equation
 TK add section from Sacramento,Zuccheti
@@ -397,7 +393,7 @@ In this case equilibrium condition \ref{eqcond} changes to
 \begin{equation*}
 P\bigg(\frac{\partial H}{\partial p}(\theta,\pthb, \beta)\bigg)=0,
 \end{equation*}
-where, as before, $P$ is a projection operator. However since $\inner{w}{\pthb}$ is does not depend on $\beta$ nor $\theta$ both \ref{pvanish} and \ref{thvanish} stay the same and so the final also stays the same.
+where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does not depend on $\beta$ nor $\theta$ both \ref{pvanish} and \ref{thvanish} also stay the same and so the final formula remains unchanged.
 
 \end{remark}
 
@@ -414,13 +410,23 @@ where, as before, $P$ is a projection operator. However since $\inner{w}{\pthb}$
 2. algorithm
 \subsection{Results}
 \subsubsection{Implicit function approach}
-\subsubsection{assuming symmetric second derivative}
-\subsubsection{one molecule}
-\subsubsection{Convergence thresholds}
-\section{Conclusions}
+TK SPECIFY ITS ONE MOLECULE APPROACH
+ For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training
 
+ TK CREATE GRADIENT OF THE MODEL AND PUT HERE.
+
+\subsubsection{assuming symmetric second derivative}
+\subsubsection{Convergence thresholds}
+\subsection{Stability issues}
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any
+
+\subsubsection{one molecule vs bigger dataset}
+
+\section{Conclusions}
+During the course of my internship at Hamprech Lab I have implemented and tested two approaches to implicit loss calculations. I have found that jacobian approach was not viable for the model I used and did not results in any metric improvement.
+On the other hadn equilibrium propagation approach did decrease the targeted metric. I have also encountered grevious model training stability issues and after extensive literature search found a solution in DEQ framework.
 \nocite{*}
-\bibliographystyle{plainnat}
+\bibliographystyle{plain}
 \bibliography{references.bib}
 
 
