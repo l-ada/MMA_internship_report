@@ -21,16 +21,16 @@
     \begin{center}
         \textbf{\Large Title of Your Internship}\\[2cm]
         \textbf{Academic Year:} 2024--2025\\
-        \textbf{Master's Program:} Mathématiques, Modélisation et Apprentissage\\
-        \textbf{Name:} Ada Lovelace\\[1cm]
-        \textbf{Internship Supervisor:} Alan Turing\\
-        \textbf{Email:} alan.turing@company.com\\[1cm]
+        \textbf{Master's Program:} M2 Mathématiques, Modélisation et Apprentissage\\
+        \textbf{Name:} Łukasz Adamowicz\\[1cm]
+        \textbf{Internship Supervisor:} Professor Fred Hamprecht\\
+        \textbf{Email:} fred.hamprecht@iwr.uni-heidelberg.de\\[1cm]
         \textbf{Hosting institution:}\\
-        Heidelberg University\\
+        Heidelberg University,\\
         Interdisciplinary Center for Scientific Computing\\
         \textbf{UFR Contact:}\\
-        Grace Hopper\\
-        grace.hopper@university.edu\\[2cm]
+        Alexis Glaunes\\
+        alexis.glaunes@parisdescartes.fr\\[2cm]
 
         % Optionally add logos, date, etc.
         \vfill
@@ -41,8 +41,9 @@
 
 \begin{abstract}
 TK make sure every equation is numbered
+
 During my internship at Hamprecht Lab I investigated training deep learning models using loss function that's defined in an implicit way.
-The goal of the internship was to adapt the approach to fine-tuning from \cite{neuralscf}. This required ...
+The goal of the internship was to adapt and implement the approach from  preprint \cite{neuralscf} to ...different setting. This required ...
 
 I implemented two approaches and resolved stability issue
 \end{abstract}
@@ -58,7 +59,8 @@ TK
 We assume $E(\theta, p)$ is ??? differentiable/continuous
 
 Electron density is approximated by a set of finite-dimensional  atom-centered function
-
+What is important is finding fixed point of the model , which should approximate the ground state $p_{gs}$.
+Since ground state is not always known, the model should converge to ground start from wide range of starting points.
 
 \begin{equation}
  \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
@@ -87,7 +89,7 @@ where
 \end{equation}
 and $\mathcal{L}_{M_i}(p) = \frac{1}{2}\mse{p-p_{M_i}}$ is the standard $L_2$ loss.
 
-In the rest of the report I will drop index $M_i$, since the loss is a sum of individual losses for each molecule and it will notably simplify the notation.
+In the rest of the report I will drop index $M_i$. This will notably simplify the notation.
 Therefore I will write $E(\theta,p)$ instead of $E(\theta,M,p)$ and the same for $p_\theta$, $\mathcal{L}(p)$ and so on.
 The quantity $\pth$ is a \textbf{fixed point}.
 This falls under the domain of \textbf{bilevel optimization}.
@@ -161,6 +163,8 @@ To obtain the gradient of the loss we start from chain rule
 Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pth}.$
 % General formula
 
+
+
 \begin{statement}
 The gradient of $\pth$ is equal to
  \begin{equation}
@@ -173,12 +177,14 @@ By definition $\widetilde{E}(\theta, \cdot)$ attains its minimum at $\pth$ it fo
 \begin{equation}
  \nabla_p \widetilde{E}(\theta, \pth) = 0.
 \end{equation}
+
+TK correct the formula by adding gradient
 By taking derivative with respect to $\theta$, we get
 
 
 % total derivative
 \begin{equation}
-0=\dth{\widetilde{E}(\theta, p_\theta)} = \pd{\widetilde{E}}{\theta} + \pd{\widetilde{E}}{p} \dth{\pth}.
+0=\dth{}\bigg(\pd{\widetilde{E}}{p}(\theta, p_\theta)\bigg) = \pd{\widetilde{E}}{\theta} + \pd{\widetilde{E}}{p} \dth{\pth}.
 \end{equation}
 Therefore
 \begin{equation}
@@ -408,25 +414,52 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 \end{remark}
 
 
+\begin{algorithm}[H]
+\caption{Equilibrium propagation }
+\begin{algorithmic}[1]
+\Require Data $p_{gs}$, model parameters $\theta$, $\beta>0$.
+\State  Solve for $p_\theta$ such that $F(p_\theta, \theta) = 0$
+\State Solve for $y = \underset{u\in \mathbb{R}^n}{\mathrm{argmin}} \bigg\|u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta} + (p_\theta-p_{gs})\bigg\|^2$
+\State Compute gradient $\dth{\mathcal{L}(\pth)} = \frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p=p_\theta \\\theta= \theta}}$
+\State \Return $\dth{\mathcal{L}(\pth)}$
+\end{algorithmic}
+\end{algorithm}
+
 
 5. Error margins
+
+\subsubsection{Roll-out}
+TK memory constraints and benefits of implicit appraoch
 
 \subsection{Results}
 \subsubsection{Implicit function approach}
 TK SPECIFY ITS ONE MOLECULE APPROACH
- For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training
+ For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
 
  I tested the algorithm with various tolerance threshold on both projected gradient descent and linear equation solver.
 
 
  TK CREATE GRADIENT OF THE MODEL AND PUT HERE.
-
+TK denop pictures
 \subsubsection{assuming symmetric second derivative}
-\subsubsection{Convergence thresholds}
-\subsection{Stability issues}
-Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, while not hurting performance. I am not aware of any explanation why the technique stabilizes training.
 
-\subsubsection{one molecule vs bigger dataset}
+Hessian symmetry numerical check
+\subsubsection{Convergence thresholds}
+\subsubsection{Conjugate gradient}
+\subsection{Equilibrium propagation approach}
+In contrast to jacobian approach I managed to finetune the model on single molecule.
+The training loss decreased. What is much more important is that density difference also decreased, when root finding algorithm was run from a different starting point.
+
+TK loss curves pictures
+
+TK deno picture
+\subsection{Stability issues}
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me when training multiple molecules. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, while not hurting performance on single molecule. I am not aware of any explanation why the technique stabilizes training.
+
+
+TK create pictures of gradients of the model while trained-no implicit loss, diverged and stabilized for both eqprop and jacobian approach.
+Run them on the same settings
+\subsubsection{Training on more than one molecule}
 After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 and 1800 molecules taken from [name of the dataset, QMUGS or QM9]. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
 TK put training loss and validation loss curves here.
 
@@ -436,7 +469,8 @@ TK put training loss and validation loss curves here.
 \newpage
 \section{Conclusions}
 During the course of my internship at Hamprech Lab I have implemented and tested two approaches to implicit loss calculations. I have found that jacobian approach was not viable for the model I used and did not results in any metric improvement.
-On the other hadn equilibrium propagation approach did decrease the targeted metric. I have also encountered grevious model training stability issues and after extensive literature search found a solution in DEQ framework.
+On the other hadn equilibrium propagation approach did decrease the targeted metric. I have also encountered grevious model training stability issues and after extensive literature search adapted the technique to my setting.
+On more personal level I learned working with version control within group,
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
@@ -465,13 +499,14 @@ fixed point correction for EMA and various p values.
 \subsection{Training}
 \subsubsection{Gradient calculation}
 Gradients are obtained using automatic differentation
-The algorithm for finding fixed point is projected gradient descent.
+The algorithm for finding fixed point is projected gradient descent. Its starting point was set to ground state $p_{gs}$.
 TK ADD threshold details
 
 Both vjp can be obtained efficiently using automatic differen in PyTorch, so naturally I preferred using matrix free methods.
 
 \subsubsection{Fixed point correcion}\label{sec:fpc}
+Fixed point correction is a technique for stabilizing DEQ training. The technique described in \cite{opticalflow}, \cite{geng2023torchdeq}
+and \cite{burger2025dequify} is as follows. Given fixed point trajectory $p_0= p_{gs},p_1,\ldots, p_T\approx  \pth $ we uniformly select $N$ intermediate points $p_{i_1}, p_{i_2}, \ldots ,p_{i_N}=p_T$ and
 
-2. algorithm
 
 \end{document}
