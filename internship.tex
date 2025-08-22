@@ -46,7 +46,7 @@ During my internship at Hamprecht Lab I investigated training deep learning mode
 
 
 \tableofcontents
-
+\newpage
 \section{Lab presentation}
 SciAi groups research focus is on ...
 The goal is to approximate energy functional...
@@ -63,6 +63,7 @@ Electron density is approximated by a set of finite-dimensional  atom-centered f
 
 
 Representation of electron density
+\newpage
 \section{Carried out work}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
 By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative with respect to argument $\theta$.
@@ -74,7 +75,7 @@ TK WHAT IS THE DIMENSION OF p?
 1. Implicit funciton theorem
 
 The goal of the project was to investigate and minimize the following loss
-\begin{equation}
+\begin{equation}\label{bilevel}
  \min_\theta \sum_i \mathcal{L}(p_{\theta}^{M_i}),
 \end{equation}
 where
@@ -413,14 +414,23 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 TK SPECIFY ITS ONE MOLECULE APPROACH
  For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training
 
+ I tested the algorithm with various tolerance threshold on both projected gradient descent and linear equation solver.
+
+
  TK CREATE GRADIENT OF THE MODEL AND PUT HERE.
 
 \subsubsection{assuming symmetric second derivative}
 \subsubsection{Convergence thresholds}
 \subsection{Stability issues}
-Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, while not hurting performance.
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, while not hurting performance. I am not aware of any explanation why the technique stabilizes training.
 
 \subsubsection{one molecule vs bigger dataset}
+After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 and 1800 molecules taken from [name of the dataset, QMUGS or QM9]. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
+TK put training loss and validation loss curves here.
+
+\begin{remark}
+ The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints the gradient is computed in mini-batches. It's possible, that \textbf{stochastic bilevel optimization} requires adaptation to make it work due to its nested structure or effect on variance of the gradient update.
+\end{remark}
 
 \section{Conclusions}
 During the course of my internship at Hamprech Lab I have implemented and tested two approaches to implicit loss calculations. I have found that jacobian approach was not viable for the model I used and did not results in any metric improvement.
@@ -438,5 +448,11 @@ and
 \appendix
 % \appendixname{Proof of}
 \section{Proof of implicit function theorem}
+
+\section{Technical details}
+architecture graph, training details (lr, optimizer, etc), rootfinind details.
+Further experiments
+fixed point correction for EMA and various p values.
+
 
 \end{document}
