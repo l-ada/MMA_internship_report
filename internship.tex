@@ -418,7 +418,7 @@ TK SPECIFY ITS ONE MOLECULE APPROACH
 \subsubsection{assuming symmetric second derivative}
 \subsubsection{Convergence thresholds}
 \subsection{Stability issues}
-Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, while not hurting performance.
 
 \subsubsection{one molecule vs bigger dataset}
 
