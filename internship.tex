@@ -9,7 +9,7 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{hyperref}
-
+\usepackage{graphicx}
 \newtheorem{theorem}{Theorem}
 \newtheorem{statement}{Statement}
 \newtheorem{lemma}{Lemma}
@@ -63,9 +63,12 @@ What is important is finding fixed point of the model , which should approximate
 Since ground state is not always known, the model should converge to ground start from wide range of starting points.
 
 \begin{equation}
- \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
+ \rho(r) = \sum_{i=1}^n p_i \Omega_i(r)
 \end{equation}
 
+\begin{equation}
+ w_i = \int_{\R^3} \Omega_i(r)dr
+\end{equation}
 
 Representation of electron density
 \newpage
@@ -76,7 +79,9 @@ By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes p
 TK $p$ DIMENSION DEPENDS ON N $M$
 TK WHAT IS THE DIMENSION OF p?
 
- \subsection{Jacobian approach}
+
+
+ \subsection{Goal of the project}
 1. Implicit funciton theorem
 
 The goal of the project was to investigate and minimize the following loss
@@ -97,7 +102,7 @@ This falls under the domain of \textbf{bilevel optimization}.
 The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$
 
 
-\subsubsection{IFT for one molecule}
+\subsubsection{One molecule}
 Let $w$ be a non-zero vector and $N>0$ a positive number.
 We consider the problem of minimizing
 
@@ -114,6 +119,10 @@ and
 \end{equation}
 where $p_{gs}$ are ground state density coefficiens given by the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
 
+
+\subsubsection{Direct approach}
+The most direct approach would be to backpropagate through the trajectory of the fixed point. More precisely, given
+\subsection{Implicit function theorem}
 This can be accomplished by using implicit function theorem
 
 TK ADD STATEMENT
@@ -168,14 +177,14 @@ Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pt
 \begin{statement}
 The gradient of $\pth$ is equal to
  \begin{equation}
-   \dth{\pth} = -\bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth)
+   \dth{\pth} = -\bigg(\frac{\partial  \pd{\widetilde{E}}{p}  }{\partial p}\bigg)^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth)
  \end{equation}
 \end{statement}
 
 \begin{proof}
 By definition $\widetilde{E}(\theta, \cdot)$ attains its minimum at $\pth$ it follows that
 \begin{equation}
- \nabla_p \widetilde{E}(\theta, \pth) = 0.
+\pd{\widetilde{E}}{p}(\theta, \pth) = 0.
 \end{equation}
 
 TK correct the formula by adding gradient
@@ -184,7 +193,7 @@ By taking derivative with respect to $\theta$, we get
 
 % total derivative
 \begin{equation}
-0=\dth{}\bigg(\pd{\widetilde{E}}{p}(\theta, p_\theta)\bigg) = \pd{\widetilde{E}}{\theta} + \pd{\widetilde{E}}{p} \dth{\pth}.
+0=\dth{}\bigg(\pd{  \nabla_p \widetilde{E}   }{p}(\theta, p_\theta)\bigg) = \pd{ \nabla_p \widetilde{E}  }{\theta} + \pd{ \nabla_p \widetilde{E}  }{p} \dth{\pth}.
 \end{equation}
 Therefore
 \begin{equation}
@@ -428,15 +437,13 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 
 5. Error margins
 
-\subsubsection{Roll-out}
-TK memory constraints and benefits of implicit appraoch
-
 \subsection{Results}
 \subsubsection{Implicit function approach}
 TK SPECIFY ITS ONE MOLECULE APPROACH
  For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
 
  I tested the algorithm with various tolerance threshold on both projected gradient descent and linear equation solver.
+
 
 
  TK CREATE GRADIENT OF THE MODEL AND PUT HERE.
@@ -446,16 +453,26 @@ TK denop pictures
 Hessian symmetry numerical check
 \subsubsection{Convergence thresholds}
 \subsubsection{Conjugate gradient}
+I implemented and used conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
+
 \subsection{Equilibrium propagation approach}
 In contrast to jacobian approach I managed to finetune the model on single molecule.
 The training loss decreased. What is much more important is that density difference also decreased, when root finding algorithm was run from a different starting point.
 
-TK loss curves pictures
+\begin{figure}[h!]
+ \centering
+ \includegraphics[scale=0.5]{images/loss_comparison.png}
+ \caption{Comparison of training loss for jacobian and EP approaches.}
+ % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 503
+\end{figure}
+
 
 TK deno picture
 \subsection{Stability issues}
-Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me when training multiple molecules. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, while not hurting performance on single molecule. I am not aware of any explanation why the technique stabilizes training.
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me when training multiple molecules. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training. I am not aware of any explanation why the technique stabilizes training.
 
+
+TK
 
 TK create pictures of gradients of the model while trained-no implicit loss, diverged and stabilized for both eqprop and jacobian approach.
 Run them on the same settings
@@ -469,17 +486,16 @@ TK put training loss and validation loss curves here.
 \newpage
 \section{Conclusions}
 During the course of my internship at Hamprech Lab I have implemented and tested two approaches to implicit loss calculations. I have found that jacobian approach was not viable for the model I used and did not results in any metric improvement.
-On the other hadn equilibrium propagation approach did decrease the targeted metric. I have also encountered grevious model training stability issues and after extensive literature search adapted the technique to my setting.
-On more personal level I learned working with version control within group,
+However equilibrium propagation approach did decrease targeted metrics. I have also encountered grevious model training stability issues and after extensive literature search adapted the technique to my setting.
+On more personal level I learned working with version control within group, to conduct literature search, acquired knowledge about
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
 
 
 \section{Appendices}
-\appendix
-\section{Proof of Equilibrium Propagation formula}
-and
+
+
 
 \appendix
 % \appendixname{Proof of}
@@ -506,7 +522,7 @@ Both vjp can be obtained efficiently using automatic differen in PyTorch, so nat
 
 \subsubsection{Fixed point correcion}\label{sec:fpc}
 Fixed point correction is a technique for stabilizing DEQ training. The technique described in \cite{opticalflow}, \cite{geng2023torchdeq}
-and \cite{burger2025dequify} is as follows. Given fixed point trajectory $p_0= p_{gs},p_1,\ldots, p_T\approx  \pth $ we uniformly select $N$ intermediate points $p_{i_1}, p_{i_2}, \ldots ,p_{i_N}=p_T$ and
+and \cite{burger2025dequify} is as follows. Given fixed point trajectory $p_0= p_{gs}, p_1,\ldots, p_T\approx  \pth $ we uniformly select $N$ intermediate points $p_{i_1}, p_{i_2}, \ldots , p_{i_N}=p_T$ and
 
 
 \end{document}
