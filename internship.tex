@@ -56,35 +56,32 @@ SciAi groups research focus is on application of deep learning to orbital-free d
 To accurately predict properties of molecules quantum mechanics formalism can be invoked to solve ... for energies.
 
 However, it turns out
-
+Unfortunnately the exact form of $E[\rho]$ is unknown.
 The goal is to approximate energy functional $E[\rho]$ by a deep learning model (surrogate functional) $E(\theta, \rho)$.
 
 
 If accurate this would allow for computation of ground state electron density in complexity $O(n)$ allowing for simulation  of big molecules.
 TK
 We assume $E(\theta, p)$ is ??? differentiable/continuous
-
-Electron density is approximated by a set of finite-dimensional  atom-centered function
 What is important is finding fixed point of the model , which should approximate the ground state $p_{gs}$.
 Since ground state is not always known, the model should converge to ground start from wide range of starting points.
 
+
+Electron density is approximated by a linear combination of atom-centered functions $\omega_i$, that is to say
 \begin{equation}
- \rho(r) = \sum_{i=1}^n p_i \Omega_i(r)
+ \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
 \end{equation}
 
 \begin{equation}
- w_i = \int_{\R^3} \Omega_i(r)dr
+ w_i = \int_{\R^3} \omega_i(r)dr
 \end{equation}
 
-Representation of electron density
+
 \newpage
+
 \section{Theory part}
-Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients. Vector $w$ corresponds to
-By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative or gradient with respect to argument $\theta$. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ a matrix of size $n \times n$ and $\frac{\partial^2 E}{\partial \theta \partial p}$ matrix of size $n \times k $.
-
-TK $p$ DIMENSION DEPENDS ON N $M$
-TK WHAT IS THE DIMENSION OF p?
-
+Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information, and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients. Vector $w$ corresponds to
+By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative or gradient with respect to argument $\theta$. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ is a matrix of size $n \times n$, and $\frac{\partial^2 E}{\partial \theta \partial p}$ is a matrix of size $n \times k $.
 
 
 \subsection{Goal of the project}
@@ -105,8 +102,9 @@ This optimization problem falls under the domain of \textbf{bilevel optimization
 
 The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$ and it will be the main subject of this report.
 
-\begin{remark}[Motivating the loss function] Finding a ground state electron density of a molecule is a fundamental problem to quantum chemistry. Usual method are too computationally expensive for big systems. Surrogate functionals are used to approximate true energy functional and through that approximate the ground state by computing fixed point of the surrogate functional. In that light minimizing the error between ground state density and fixed point of the model makes certain ammount of sense.
+\begin{remark}[Motivating the loss function] Finding a ground state electron density of a molecule is a fundamental problem in quantum chemistry. Usual methods are too computationally expensive for big systems. Surrogate functionals are used to approximate true energy functional and through that approximate the ground state by computing fixed point of the surrogate functional. In that light, minimizing the error between ground state density and fixed point of the model makes a certain amount of sense.
 \end{remark}
+
 
 
 \subsubsection{One molecule}
@@ -124,15 +122,15 @@ and
 \begin{equation}
  \mathcal{L}(p) = \frac{1}{2} \norm{p-p_{gs}}^2,
 \end{equation}
-where $p_{gs}$ are ground state density coefficiens given by the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
+where $p_{gs}$ are ground state density coefficients given by the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
 
 
 \subsubsection{Direct approach}
-The most direct approach would be to backpropagate through the trajectory of the fixed point. More precisely, we run gradient descent and obtain a trajectory $p_1, \ldots, p_T$, where $p_T \approx \pth$. We can store this trajectory in memory and use backpropagation on the the loss
+The most direct approach would be to backpropagate through the trajectory of the fixed point. More precisely, we run gradient descent and obtain a trajectory $p_1, \ldots, p_T$, where $p_T \approx \pth$. We can store this trajectory in memory and use backpropagation on the loss
 \begin{equation}
  \mathcal{L}(p_T(\theta)) \approx \mathcal{L}(\pth)
 \end{equation}
-Although straigthforward there are few issues with this approach.
+Although straightforward there are a few issues with this approach.
 \begin{itemize}
  \item backpropagation through the whole trajectory is very memory intensive
  \item the gradient depends on the starting point
@@ -140,20 +138,22 @@ Although straigthforward there are few issues with this approach.
  Due to stability issues and difficulties of tracking loss I ended up not using warm-starting.
 \end{itemize}
 
+
 \subsection{Implicit function theorem}
-This can be accomplished by using implicit function theorem. In the rest of the document I will refer to computation of the gradient using this method as \textbf{jacobian appraoch}.
+This can be accomplished by using implicit function theorem. In the rest of the document I will refer to computation of the gradient using this method as \textbf{jacobian approach}.
 
 I use the version of implicit function theorem from \cite{zucchet2022beyond}, which in turn is taken from \cite{dontchev2009implicit}.
 \begin{theorem}[Implicit Function Theorem, \cite{zucchet2022beyond} ]
 Let $G(\theta, p): \R^k \times \R^n \to \R^n$ be $C^1$ and $(\bar{\theta}, \bar{p})$ such that $G(\bar{\theta},\bar{p})=0$. If the jacobian
-$\pd{G}{p}(\bar{\theta},\bar{p})$ is non-singular, then there exists an open neighbourhood $U$ of $\bar{\theta} $ and a function $p(\theta):U \to \R^n$, such that $G(\theta, p(\theta)) = 0$ and $p(\bar{\theta}) = \bar{p}$. Moreover $p(\theta)$ is also differentiable with
+$\pd{G}{p}(\bar{\theta},\bar{p})$ is non-singular, then there exists an open neighbourhood $U$ of $\bar{\theta} $ and a function $p(\theta):U \to \R^n$, such that $G(\theta, p(\theta)) = 0$ and $p(\bar{\theta}) = \bar{p}$. Moreover, $p(\theta)$ is also differentiable with
 its derivative given by
 \begin{equation}
 \pd{p(\theta)}{\theta}= - \bigg(\pd{G}{p}(\theta, p(\theta))\bigg)^{-1} \frac{\partial^2 G}{\partial \theta \partial p}(\theta, p(\theta)).
 \end{equation}
 
 \end{theorem}
-In our case $G = \pd{E}{p}$. Since our model is $C^1$/smooth with respect to  arguments and the hessian of $E$ is ...
+In our case $G = \pd{E}{p}$. Since our model is $C^1$/smooth with respect to its arguments and the hessian of $E$ is positive definite, the conditions of the theorem are satisfied.
+
 
 \subsubsection{Basis dependent approach}
 
@@ -169,8 +169,7 @@ and the problem becomes
 \begin{equation}
  \pth = \argmin_{p\in \R^{n-1}} \widetilde{E}(\theta, p)
 \end{equation}
-We will find the gradient with the help of implicit function theorem
-
+We will find the gradient with the help of implicit function theorem.
 
 \begin{statement}
 The gradient of $\mathcal{L}(\pth)$ is equal to
@@ -221,18 +220,7 @@ This gives us the final formula
  \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) H^{-1}  \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}\bigg|_{p=p_\theta, \theta=\theta}.
 \end{equation}
 
-% Following \cite{neuralscf} we denote
-% \begin{equation}
-%  y = -(\pth-p_{gs})A^{-1}.
-% \end{equation}
-% The final gradient formula is
-% \begin{equation}
-%  \dth{\mathcal{L}(\pth)} = y \cdot \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
-% \end{equation}
 
-
-
-% END OF basis approach
 \subsubsection{Basis-free approach}
 Let's reformulate the problem without relying on a specific basis.
 We want to find
