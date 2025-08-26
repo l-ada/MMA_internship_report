@@ -92,12 +92,15 @@ where
 \end{equation}
 and $\mathcal{L}_{M_i}(p) = \frac{1}{2}\mse{p-p_{M_i}}$ is the standard $L_2$ loss.
 
-In the rest of the report I will drop index $M_i$. This will notably simplify the notation.
+In the rest of the report I will drop index $M_i$. The reason is it will simplify the notation significantly, while not impacting the gradient derivation in any notable way.
 Therefore I will write $E(\theta,p)$ instead of $E(\theta,M,p)$ and the same for $p_\theta$, $\mathcal{L}(p)$ and so on.
 The quantity $\pth$ is a \textbf{fixed point}.
-This falls under the domain of \textbf{bilevel optimization}.
+This optimization problem falls under the domain of \textbf{bilevel optimization}.
 
-The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$
+The main problem lies in computing the gradient of $\mathcal{L}(p_\theta)$ and it will be the main subject of this report.
+
+\begin{remark}[Motivating the loss function] Finding a ground state electron density of a molecule is a fundamental problem to quantum chemistry. Usual method are too computationally expensive for big systems. Surrogate functionals are used to approximate true energy functional and through that approximate the ground state by computing fixed point of the surrogate functional. In that light minimizing the error between ground state density and fixed point of the model makes certain ammount of sense.
+\end{remark}
 
 
 \subsubsection{One molecule}
@@ -350,7 +353,33 @@ The quantity $\frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p
 
 The implementation details, such as root-solver, are described in \ref{sec:impl}.
 
+\subsection{Jacobian approach experiments and results}
 
+\subsubsection{Convergence thresholds}
+ I tested the algorithm with various tolerance threshold and training learning rate on both fixed point search and linear equation solver.
+I found out that strict thresholds on fixed point search hindered training completely. The loss increased during training and varying both learning rate and the tolerance on linear equation solving did not change this fact. Even when the loss decreased at first it could increase later as shown in Figure~\ref{fig:jac-eqprop-loss}.
+
+
+\begin{figure}[h!]
+ \centering
+ \includegraphics[scale=0.5]{images/loss_comparison.png}
+ \caption{Comparison of training loss for jacobian and EP approaches. Jacobian approach decreases loss at first, but starts diverging later. Equilibrium propagation seems to be more stable.}
+ % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
+ \label{fig:jac-eqprop-loss}
+\end{figure}
+
+
+
+TK DENOP PICTURES
+\subsubsection{assuming symmetric second derivative}
+
+Hessian symmetry numerical check
+
+\subsubsection{Conjugate gradient}
+I implemented and tested conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
+\subsubsection{Summary of jacobian appraoch}
+
+ For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
 
  \begin{equation}
 \min_{\lambda,\theta} L
@@ -451,46 +480,23 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 \end{algorithm}
 
 
-\section{Results}
-All of the results are on one molecule unless specified otherwise.
-
-\subsection{Jacobian approach}
-
-\subsubsection{Convergence thresholds}
- I tested the algorithm with various tolerance threshold and training learning rate on both fixed point search and linear equation solver.
-I found out that strict thresholds on fixed point search hindered training completely. The loss increased during training and varying both learning rate and the tolerance on linear equation solving did not change this fact. Even when the loss decreased at first it could increase later as shown in Figure~\ref{fig:jac-eqprop-loss}.
-
-
+\subsection{Equilibrium propagation experiments}
+In contrast to jacobian approach I managed to finetune the model on single molecule.
+The training loss decreased. What is much more important is that density difference also decreased, when fixed point search was run from a different starting point.
+TK DENOP FOR EQPROP
+\subsubsection{Varying $\beta$ parameter}
+I tested equilibrium propagation for different values of parameter $\beta$.
 \begin{figure}[h!]
  \centering
- \includegraphics[scale=0.5]{images/loss_comparison.png}
- \caption{Comparison of training loss for jacobian and EP approaches. Jacobian approach decreases loss at first, but starts diverging later. Equilibrium propagation seems to be more stable.}
+ \includegraphics[scale=0.5]{images/train_loss_betas.png}
+ \caption{Training loss for different valus of $\beta$ parameter.}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:jac-eqprop-loss}
 \end{figure}
 
-
-
- TK CREATE GRADIENT OF THE MODEL AND PUT HERE.
-TK denop pictures
-\subsubsection{assuming symmetric second derivative}
-
-Hessian symmetry numerical check
-
-\subsubsection{Conjugate gradient}
-I implemented and tested conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
-\subsubsection{Summary of jacobian appraoch}
-
- For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
-
- TK DENOP COMPARISON PICTURE
-
-\subsection{Equilibrium propagation approach}
-In contrast to jacobian approach I managed to finetune the model on single molecule.
-The training loss decreased. What is much more important is that density difference also decreased, when root finding algorithm was run from a different starting point.
-
-
-
+\subsubsection{Summary of equilibrium propagation approach}
+Equilibrium propagation proved to be more and applicable. I managed to decrease the implicit loss on one molecule
+\section{Other results}
 
 TK deno picture
 \subsection{Stability issues}
