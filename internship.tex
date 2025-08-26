@@ -52,9 +52,15 @@ I implemented two approaches and resolved stability issue. I have also shown, th
 \tableofcontents
 \newpage
 \section{Lab presentation}
-SciAi groups research focus is on ...
-The goal is to approximate energy functional...
-This would allow for computation of ... in complexity O(n) instead of ...
+SciAi groups research focus is on application of deep learning to orbital-free density functional theory.
+To accurately predict properties of molecules quantum mechanics formalism can be invoked to solve ... for energies.
+
+However, it turns out
+
+The goal is to approximate energy functional $E[\rho]$ by a deep learning model (surrogate functional) $E(\theta, \rho)$.
+
+
+If accurate this would allow for computation of ground state electron density in complexity $O(n)$ allowing for simulation  of big molecules.
 TK
 We assume $E(\theta, p)$ is ??? differentiable/continuous
 
@@ -73,8 +79,8 @@ Since ground state is not always known, the model should converge to ground star
 Representation of electron density
 \newpage
 \section{Theory part}
-Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule and $p=(p_1, \ldots ,p_n )\in \R^n$ density coefficients. Vector $w$ corresponds to
-By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative with respect to argument $\theta$.
+Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients. Vector $w$ corresponds to
+By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative or gradient with respect to argument $\theta$. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ a matrix of size $n \times n$ and $\frac{\partial^2 E}{\partial \theta \partial p}$ matrix of size $n \times k $.
 
 TK $p$ DIMENSION DEPENDS ON N $M$
 TK WHAT IS THE DIMENSION OF p?
@@ -150,7 +156,6 @@ its derivative given by
 In our case $G = \pd{E}{p}$. Since our model is $C^1$/smooth with respect to  arguments and the hessian of $E$ is ...
 
 \subsubsection{Basis dependent approach}
-TK find better notation
 
 First, let's consider the problem in an orthogonal basis containing $w$.
 Let the basis be $(e_1,\ldots, e_{n-1}, w)$.
@@ -161,18 +166,16 @@ and the problem becomes
   \min_\theta \mathcal{L}(p_\theta),
 \end{equation}
 
-
 \begin{equation}
  \pth = \argmin_{p\in \R^{n-1}} \widetilde{E}(\theta, p)
 \end{equation}
+We will find the gradient with the help of implicit function theorem
 
 
-TK CHECK NOTATION FOR HESSIAN AND MIXED DERIVATIVE
-TK CHANGE symbol for A
 \begin{statement}
 The gradient of $\mathcal{L}(\pth)$ is equal to
  \begin{equation}
- \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1}  \frac{\partial  \nabla_p \widetilde{E}}{\partial \theta}
+ \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial^2  \widetilde{E}}{\partial p^2}\bigg)^{-1}  \frac{\partial^2  \widetilde{E}}{\partial \theta \partial p}
 \end{equation}
 \end{statement}
 
@@ -183,12 +186,10 @@ To obtain the gradient of the loss we start from chain rule
 Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pth}.$
 % General formula
 
-
-
 \begin{statement}
 The gradient of $\pth$ is equal to
  \begin{equation}
-   \dth{\pth} = -\bigg(\frac{\partial  \pd{\widetilde{E}}{p}  }{\partial p}\bigg)^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth)
+   \dth{\pth} = -\bigg(\frac{\partial^2 \widetilde{E}}{\partial p^2}\bigg)^{-1} \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}(\theta, \pth)
  \end{equation}
 \end{statement}
 
@@ -198,30 +199,27 @@ By definition $\widetilde{E}(\theta, \cdot)$ attains its minimum at $\pth$ it fo
 \pd{\widetilde{E}}{p}(\theta, \pth) = 0.
 \end{equation}
 
-TK correct the formula by adding gradient
 By taking derivative with respect to $\theta$, we get
-
 
 % total derivative
 \begin{equation}
-0=\dth{}\bigg(\pd{  \nabla_p \widetilde{E}   }{p}(\theta, p_\theta)\bigg) = \pd{ \nabla_p \widetilde{E}  }{\theta} + \pd{ \nabla_p \widetilde{E}  }{p} \dth{\pth}.
+0=\dth{}\bigg(\frac{\partial \widetilde{E}}{\partial p}(\theta, p_\theta)\bigg) = \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p} + \frac{\partial^2 \widetilde{E}}{\partial p^2} \dth{\pth}.
 \end{equation}
 Therefore
 \begin{equation}
- \dth{\pth} = -\bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)^{-1} \pd{\nabla_p \widetilde{E}}{\theta}(\theta, \pth).
+ \dth{\pth} = -\bigg(\frac{\partial^2 \widetilde{E}}{\partial p^2}\bigg)^{-1} \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}(\theta, \pth).
 \end{equation}
 
 Let's denote the hessian of $\widetilde{E}$ as
 
 \begin{equation}
- H := \bigg(\frac{\partial \nabla_p \widetilde{E}}{\partial p}\bigg)(\theta,\pth) = H_{\widetilde{E}}(\theta,\pth)
+ H := \frac{\partial^2 \widetilde{E}}{\partial p^2}(\theta,\pth) = H_{\widetilde{E}}(\theta,\pth)
 \end{equation}
 \end{proof}
 This gives us the final formula
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) H^{-1}  \frac{\partial \nabla_p \widetilde{E}}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+ \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) H^{-1}  \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}\bigg|_{p=p_\theta, \theta=\theta}.
 \end{equation}
-
 
 % Following \cite{neuralscf} we denote
 % \begin{equation}
@@ -304,7 +302,6 @@ H & 0 \\
 \end{equation}
 is satisfied for by $y$ of the form
 
-TK RESOLVE DIMENSIONALITY NOTATION PROBLEMS. IS $P:R^n ->R^n-1$ or does is just put zero on the last component?
 \begin{equation}
  y = P\big((\pth-p_{gs})\big)H^{-1} + \alpha w.
 \end{equation}
@@ -381,12 +378,7 @@ I implemented and tested conjugate gradient method for solving linear system. Ho
 
  For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
 
- \begin{equation}
-\min_{\lambda,\theta} L
- \end{equation}
 
-5. Error analysis for both approximate fixed point and solving linear equation
-TK add section from Sacramento,Zuccheti
 \subsection{ Equilibrium propagation}
 
 \subsubsection{Base version}
@@ -523,6 +515,8 @@ However equilibrium propagation approach did decrease targeted metrics. I have a
 Therefore, equilibrium propagation was shown to be an alternative method for optimizing losses defined implicitly, even when jacobian approach doesn't work.
 
 On more personal level I learned working with version control within group, to conduct literature search, acquired knowledge about
+
+Future directions
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
