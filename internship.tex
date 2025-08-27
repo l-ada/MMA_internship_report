@@ -46,46 +46,64 @@ During my internship at Hamprecht Lab, an investigation was conducted on fine-tu
 
 The goal of the internship was to adapt and implement the approach from the preprint \cite{neuralscf} to a setting used in Hamprecht lab.
 
-Two approaches to gradient computation were implemented: equilibrium propagation and Jacobian approach. A stability issue arose, but it was subsequently resolved. The results showed that the equilibrium propagation approach might be viable, whereas the Jacobian approach did not work at all.
+Two approaches to gradient computation were implemented: equilibrium propagation and jacobian approach. A stability issue arose, but was subsequently resolved. The results showed that the equilibrium propagation approach might be viable, whereas the jacobian approach did not work at all.
 \end{abstract}
 
 
 \tableofcontents
 \newpage
 \section{Lab presentation}
-SciAi groups research focus is on application of deep learning to orbital-free density functional theory.
-To accurately predict properties of molecules quantum mechanics formalism can be invoked to solve ... for energies.
-
-However, it turns out
-Unfortunnately the exact form of $E[\rho]$ is unknown.
-The goal is to approximate energy functional $E[\rho]$ by a deep learning model (surrogate functional) $E(\theta, \rho)$.
 
 
-If accurate this would allow for computation of ground state electron density in complexity $O(n)$ allowing for simulation  of big molecules.
-TK
-We assume $E(\theta, p)$ is ??? differentiable/continuous
-What is important is finding fixed point of the model , which should approximate the ground state $p_{gs}$.
-Since ground state is not always known, the model should converge to ground start from wide range of starting points.
+%  Since $E(\theta, p)$ is a approximation of physical potential, it's reasonable to assume that hessian is positive-definite at the minimum.
 
+The current focus of the ScientificAI group is on applying deep learning to orbital-free density functional theory (OF-DFT).
 
-Electron density is approximated by a linear combination of atom-centered functions $\omega_i$, that is to say
+ To accurately predict molecular properties, quantum mechanics formalism can be employed to solve for the electronic structure, but for big molecules this approach is not tractable.
 
-
- Since $E(\theta, p)$ is a approximation of physical potential, it's reasonable to assume that hessian is positive-definite.
+However a theorem by Hohenberg-Kohn has shown that all that's needed to know the electronic structure is the ground state electron density $\rho_{gs}$ and that there exists an energy functional such that
 \begin{equation}
- \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
+ \rho_{gs} = \argmin_\rho E[\rho].
 \end{equation}
 
-\begin{equation}
- w_i = \int_{\R^3} \omega_i(r)dr
-\end{equation}
+
+Exact form of the energy functional $E[\rho]$ remains unknown. The goal of  project is to approximate the energy functional $E[\rho]$ using a deep learning model (a surrogate functional) denoted as $E(\theta, \rho)$.
+
+If successful, this would enable the computation of the ground-state electron density with a complexity of $O(n)$, thereby allowing for efficient simulations of large molecules. Since the exact ground state is not always known, the model must be capable of converging from a wide range of initial starting points.
+
+The electron density $\rho(\vec{r})$ is approximated as a linear combination of atom-centered smooth functions $\omega_i$, that is:
+
+\[
+\rho(\vec{r}) = \sum_{i=1}^n p_i \omega_i(\vec{r})
+\]
+
+The specific number and type of functions $\omega_i$ depend on the atoms in the system.
+
+The integral of the electron density yields the total number of electrons in the system:
+
+\[
+N = \int_{\mathbb{R}^3} \rho(\vec{r}) d\vec{r} = \sum_{i=1}^n p_i \int_{\mathbb{R}^3} \omega_i(\vec{r}) d\vec{r}.
+\]
+
+By defining a vector $w = (w_1, \ldots, w_n)$ where each component is:
+
+\[
+w_i = \int_{\mathbb{R}^3} \omega_i(\vec{r}) d\vec{r},
+\]
+
+we can express the total electron count as:
+
+\[
+\langle w, p \rangle = N.
+\]
+
 
 
 \newpage
 
 \section{Theory part}
-Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information, and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients. Vector $w$ corresponds to
-By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative or gradient with respect to argument $\theta$. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ is a matrix of size $n \times n$, and $\frac{\partial^2 E}{\partial \theta \partial p}$ is a matrix of size $n \times k $.
+Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information, and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients.  We assume that $E(\theta, M ,p)$ is smooth with respect to $\theta$ and $p$.
+By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative $\theta$, when all other arguments are held constant. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ is a matrix of size $n \times n$, and $\frac{\partial^2 E}{\partial \theta \partial p}$ is a matrix of size $n \times k $.
 
 
 \subsection{Goal of the project}
@@ -321,7 +339,7 @@ treat $y$ as constant vector and pull it inside partial derivative to obtain
 
 The whole procedure for gradient calculation is as below
 \begin{algorithm}[H]
-\caption{Gradient Calculation}
+\caption{Jacobian approach gradient Calculation}
 \begin{algorithmic}[1]
 \Require Data $p_{gs}$, model parameters $\theta$
 \State  Solve for $p_\theta  = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} E(\theta, p).$
@@ -533,17 +551,10 @@ TK tracking loss function improvements for different molecules is quite hard
 \section{Implementation details} \label{sec:impl}
 
 \subsubsection{Model architecture}
-I used pre-trained Graphormer model, which was trained on combination of QMUGS and QM9 datasets for $90$ epochs.
-TK equiviariance of the model.
-The model is rotation invariant ...
+I used a standard Graphormer model, which was trained on combination of QMUGS and QM9 datasets for $90$ epochs. The model architecture was based on the one in article \cite{zhang2024overcoming}.
 
-0. Technical details
-    architecture,
-    model
-    training
-    etc
 \subsection{Fixed point search}
-To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5e-3$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$ and the maximum number of gradient descent steps was set to $100$.
+To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5\cdot 10^{-3}$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$ and the maximum number of gradient descent steps was set to $100$.
 
 \subsection{Fine-tuning on single molecule}
 I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$ for $4$ epochs. Each epoch consisted of $80$ weight updates.
@@ -571,5 +582,7 @@ Finally, we compute the gradient based on the loss function
 \begin{equation}
  \mathcal{L}_{FPC}(\theta) = \sum_{k=1}^{n}\gamma^{n-k+1}\mathcal{L}(p_{i_k}).
 \end{equation}
+\subsection{Linear equation}
+TK solving yJ = b with vjp and jvp calls.
 
 \end{document}
