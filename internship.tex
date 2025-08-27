@@ -41,12 +41,12 @@
 
 
 \begin{abstract}
-TK make sure every equation is numbered
 
-During my internship at Hamprecht Lab I investigated training deep learning models using loss function that's defined in an implicit way.
-The goal of the internship was to adapt and implement the approach from  preprint \cite{neuralscf} to ...different setting. This required ...
+During my internship at Hamprecht Lab, an investigation was conducted on fine-tuning deep learning models using a loss function defined in an implicit way.
 
-I implemented two approaches and resolved stability issue. I have also shown, that equilibrium propagation approach might be viable
+The goal of the internship was to adapt and implement the approach from the preprint \cite{neuralscf} to a setting used in Hamprecht lab.
+
+Two approaches to gradient computation were implemented: equilibrium propagation and Jacobian approach. A stability issue arose, but it was subsequently resolved. The results showed that the equilibrium propagation approach might be viable, whereas the Jacobian approach did not work at all.
 \end{abstract}
 
 
@@ -69,6 +69,9 @@ Since ground state is not always known, the model should converge to ground star
 
 
 Electron density is approximated by a linear combination of atom-centered functions $\omega_i$, that is to say
+
+
+ Since $E(\theta, p)$ is a approximation of physical potential, it's reasonable to assume that hessian is positive-definite.
 \begin{equation}
  \rho(r) = \sum_{i=1}^n p_i \omega_i(r)
 \end{equation}
@@ -126,17 +129,17 @@ and
 where $p_{gs}$ are ground state density coefficients given by the data and satisfy the constraint $\inner{p_{gs}}{w} = N$.
 
 
-\subsubsection{Direct approach}
+\subsubsection{Direct approach to gradient computation}
 The most direct approach would be to backpropagate through the trajectory of the fixed point. More precisely, we run gradient descent and obtain a trajectory $p_1, \ldots, p_T$, where $p_T \approx \pth$. We can store this trajectory in memory and use backpropagation on the loss
 \begin{equation}
  \mathcal{L}(p_T(\theta)) \approx \mathcal{L}(\pth)
 \end{equation}
 Although straightforward there are a few issues with this approach.
 \begin{itemize}
- \item backpropagation through the whole trajectory is very memory intensive
+ \item backpropagation through the whole trajectory is very memory intensive, therefore fixed point search can be run for very low number of steps.
  \item the gradient depends on the starting point
  \item can't apply warm-starting to speed up the training. In theory, for jacobian and equilibrium propagation approach we can find the fixed point once and reuse it in subsequent runs as a starting point, therefore making training much faster.
- Due to stability issues and difficulties of tracking loss I ended up not using warm-starting.
+ However, due to stability issues and difficulties of tracking loss, I ended up not using warm-starting.
 \end{itemize}
 
 
@@ -156,71 +159,68 @@ its derivative given by
 In our case $G = \pd{E}{p}$. Since our model is $C^1$/smooth with respect to its arguments and the hessian of $E$ is assummed to be positive definite, the conditions of the theorem are satisfied.
 
 
-\subsubsection{Basis dependent approach}
+\subsubsection{Basis-dependent approach}
 
-First, let's consider the problem in an orthogonal basis containing $w$.
-Let the basis be $(e_1,\ldots, e_{n-1}, w)$.
-Let $\widetilde{E}(\theta, p) = E(\theta, p_{gs}+ p)$ and $p = \sum_{i=1}^{n-1} p_i e_i$.
-Then $\widetilde E(\theta, \cdot)$ is just $E$ restricted to affine space $p_{gs}+\text{ span} (w)^\perp$
-and the problem becomes
+First, let's consider the problem in an orthogonal basis containing $w$. Let the basis be $(e_1,\ldots, e_{n-1}, w)$. Define $\widetilde{E}(\theta, p) = E(\theta, p_{gs}+ p)$ and $p = \sum_{i=1}^{n-1} p_i e_i$. Then $\widetilde E(\theta, \cdot)$ is just $E$ restricted to the affine space $p_{gs}+\text{span}(w)^\perp$, and the problem becomes
+
 \begin{equation}
   \min_\theta \mathcal{L}(p_\theta),
 \end{equation}
 
 \begin{equation}
- \pth = \argmin_{p\in \R^{n-1}} \widetilde{E}(\theta, p)
+ p_\theta = \argmin_{p\in \R^{n-1}} \widetilde{E}(\theta, p)
 \end{equation}
-We will find the gradient with the help of implicit function theorem.
+
+We will find the gradient with the help of the implicit function theorem.
 
 \begin{statement}
-The gradient of $\mathcal{L}(\pth)$ is equal to
+The gradient of $\mathcal{L}(p_\theta)$ is equal to
  \begin{equation}
- \dth{\mathcal{L}(\pth)} = -(\pth - p_{gs}) \bigg(\frac{\partial^2  \widetilde{E}}{\partial p^2}\bigg)^{-1}  \frac{\partial^2  \widetilde{E}}{\partial \theta \partial p}
+ \frac{\partial \mathcal{L}(p_\theta)}{\partial \theta} = -(\pth - p_{gs}) \bigg(\frac{\partial^2  \widetilde{E}}{\partial p^2}\bigg)^{-1}  \frac{\partial^2  \widetilde{E}}{\partial \theta \partial p}
 \end{equation}
 \end{statement}
 
-To obtain the gradient of the loss we start from chain rule
+To obtain the gradient of the loss, we start from the chain rule
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = \pd{\mathcal{L}}{p}\dth{\pth}.
+ \frac{\partial \mathcal{L}(p_\theta)}{\partial \theta} = \frac{\partial \mathcal{L}}{\partial p}\frac{\partial p_\theta}{\partial \theta}.
 \end{equation}
-Since $\pd{\mathcal{L}}{p}(\pth )= \pth-p_{gs}$ all we need to find is $\dth{\pth}.$
-% General formula
+
+Since $\frac{\partial \mathcal{L}}{\partial p}(p_\theta)= p_\theta-p_{gs}$, all we need to find is $\frac{\partial p_\theta}{\partial \theta}.$
 
 \begin{statement}
-The gradient of $\pth$ is equal to
+The gradient of $p_\theta$ is equal to
  \begin{equation}
-   \dth{\pth} = -\bigg(\frac{\partial^2 \widetilde{E}}{\partial p^2}\bigg)^{-1} \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}(\theta, \pth)
+   \frac{\partial p_\theta}{\partial \theta} = -\bigg(\frac{\partial^2 \widetilde{E}}{\partial p^2}\bigg)^{-1} \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}(\theta, p_\theta)
  \end{equation}
 \end{statement}
 
 \begin{proof}
-By definition $\widetilde{E}(\theta, \cdot)$ attains its minimum at $\pth$ it follows that
+By definition, $\widetilde{E}(\theta, \cdot)$ attains its minimum at $p_\theta$, so it follows that
 \begin{equation}
-\pd{\widetilde{E}}{p}(\theta, \pth) = 0.
+\frac{\partial \widetilde{E}}{\partial p}(\theta, p_\theta) = 0.
 \end{equation}
 
 By taking derivative with respect to $\theta$, we get
 
 % total derivative
 \begin{equation}
-0=\dth{}\bigg(\frac{\partial \widetilde{E}}{\partial p}(\theta, p_\theta)\bigg) = \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p} + \frac{\partial^2 \widetilde{E}}{\partial p^2} \dth{\pth}.
+0=\frac{\partial}{\partial \theta}\left(\frac{\partial \widetilde{E}}{\partial p}(\theta, p_\theta)\right) = \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p} + \frac{\partial^2 \widetilde{E}}{\partial p^2} \frac{\partial p_\theta}{\partial \theta}.
 \end{equation}
 Therefore
 \begin{equation}
- \dth{\pth} = -\bigg(\frac{\partial^2 \widetilde{E}}{\partial p^2}\bigg)^{-1} \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}(\theta, \pth).
+ \frac{\partial p_\theta}{\partial \theta} = -\left(\frac{\partial^2 \widetilde{E}}{\partial p^2}\right)^{-1} \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}(\theta, p_\theta).
 \end{equation}
 
-Let's denote the hessian of $\widetilde{E}$ as
+Let's denote the Hessian of $\widetilde{E}$ as
 
 \begin{equation}
- H := \frac{\partial^2 \widetilde{E}}{\partial p^2}(\theta,\pth) = H_{\widetilde{E}}(\theta,\pth)
+H := \frac{\partial^2 \widetilde{E}}{\partial p^2}(\theta,p_\theta)
 \end{equation}
 \end{proof}
 This gives us the final formula
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs}) H^{-1}  \frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}\bigg|_{p=p_\theta, \theta=\theta}.
+ \frac{\partial}{\partial \theta}\mathcal{L}(p_\theta) = - (p_\theta - p_{gs}) H^{-1}  \left.\frac{\partial^2 \widetilde{E}}{\partial \theta \partial p}\right|_{p=p_\theta, \theta=\theta}.
 \end{equation}
-
 
 \subsubsection{Basis-free approach}
 Let's reformulate the problem without relying on a specific basis.
@@ -230,57 +230,54 @@ We want to find
 \end{equation}
 with
 \begin{equation}
-\pth = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} E(\theta, p).
+p_\theta = \argmin_{\substack{p \in \R^n \\ p: \langle p, w\rangle=N }} E(\theta, p).
 \end{equation}
 
 
  To this end we make use of the following lemma.
 
 \begin{lemma}
- Let $P := Id -\frac{ww^T}{w^Tw} $ be the projection operator onto subspace $V = \text{span}(w)^{\perp}$. Then the following equality is true
+ Let $P := I -\frac{ww^T}{w^Tw} $ be the projection operator onto subspace $V = \text{span}(w)^{\perp}$. Then the following equality is true
  \begin{equation}
-  P\big(\nabla_p E(\theta, p_\theta)\big) = 0
+  P\left(\pd{E}{p}(\theta, p_\theta)\right) = 0
  \end{equation}
 
 \end{lemma}
-
 \begin{proof}
-  Since $p_\theta$ is the minimum of $E(\theta,p)$ restricted to $V$ we have \[\langle \nabla_p E(\theta,p_{\theta}), u \rangle = 0\] for any $u\in V$. Taking $u = P\big( \nabla_p E(\theta,p_\theta)\big)$ we obtain
-  \[\langle \nabla_p E(\theta,p_{\theta}), P\big( \nabla_p E(\theta,p_\theta)\big) \rangle = \norm{P\big( \nabla_p E(\theta,p_\theta)\big)}^2=0,\]
-  which conludes the proof.
+  Since $p_\theta$ is the minimum of $E(\theta,p)$ restricted to $V+p_{gs}$ we have \[\langle \pd{E}{p}(\theta,p_{\theta}), u \rangle = 0\] for any $u\in V$. Taking $u = P\big( \pd{E}{p}(\theta,p_\theta)\big)$ we obtain
+  \[\langle \pd{E}{p}(\theta,p_{\theta}), P\big( \pd{E}{p}(\theta,p_\theta)\big) \rangle = \norm{P\big( \pd{E}{p}(\theta,p_\theta)\big)}^2=0,\]
+  which concludes the proof.
 \end{proof}
-TK get rid of nabla
-Let's denote $F(\theta,p) :=P (\nabla_p E(\theta,p)).$ Then the previous condition can be written as
+
+Let's denote $F(\theta,p) :=P \left(\pd{E}{p}(\theta,p)\right).$ Then the previous condition can be written as
 \begin{equation}
  F(\theta,p_\theta) = 0.
 \end{equation}
 We take the derivative with respect to $\theta$
 \begin{equation}
-0=\dth{F(\theta, p_\theta)} = \pd{F}{\theta} + \pd{F}{p} \dth{\pth}.
+0=\dth{F(\theta, p_\theta)} = \pd{F}{\theta}(\theta,p_\theta) + \pd{F}{p}(\theta,p_\theta) \dth{p_\theta}.
 \end{equation}
 Rearranging we obtain
 \begin{equation}
- \frac{d p_\theta}{d\theta} = - \bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+ \frac{d p_\theta}{d\theta} = - \bigg(\pd{F}{p}(\theta,p_\theta)\bigg)^{-1} \pd{F}{\theta}(\theta,p_\theta).
 \end{equation}
 
-Therefore the full gradient of $\mathcal{L}(\pth)$ is equal to
+Therefore the full gradient of $\mathcal{L}(p_\theta)$ is equal to
 \begin{equation}
- \dth{\mathcal{L}(\pth)} = - (\pth - p_{gs})\bigg(\frac{\partial F}{\partial p}\bigg)^{-1}  \frac{\partial F}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
+ \dth{\mathcal{L}(p_\theta)} = - (p_\theta - p_{gs})\bigg(\pd{F}{p}(\theta,p_\theta)\bigg)^{-1} \pd{F}{\theta}(\theta,p_\theta).
 \end{equation}
-\begin{remark}
- The jacobian $\frac{\partial F}{\partial p}$ is not invertible, since $F$ is a projection.
- \begin{equation}
-  F(\theta, p) = \sum_{i=1}^{n-1} \inner{\nabla_p E(\theta, p)}{e_i} e_i +  0 \cdot w
- \end{equation}
-
+ \begin{remark}
+ The jacobian $\pd{F}{p}$ is not invertible, since $F$ is a projection.
+  \begin{equation}
+   F(\theta, p) = \sum_{i=1}^{n-1} \inner{\pd{E}{p}(\theta, p)}{e_i} e_i +  0 \cdot w
+  \end{equation}
+%
  The jacobian matrix in the basis $(e_0,...,e_{n-1},w)$ can be written as \begin{equation}
                       \frac{\partial F}{\partial p}\bigg|_{p=\pth} =\begin{bmatrix}
 H & 0 \\
 0 & 0
 \end{bmatrix}.
-                     \end{equation}
-
-
+\end{equation}
 
 and solution to linear regression
 \begin{equation}
@@ -300,6 +297,8 @@ That is to say
  \inner{y}{ \pd{F}{\theta}}=\inner{Py}{\pd{F}{\theta}}.
 \end{equation}
 
+
+
 Therefore, the formula doesn't change, however some algorithms for solving linear systems might not work, if they rely on invertibility.
 
 \end{remark}
@@ -312,7 +311,6 @@ We can rewrite the formula for the gradient as
 \end{equation}
 
 treat $y$ as constant vector and pull it inside partial derivative to obtain
-
 
 \begin{equation}
  \dth{\mathcal{L}(\pth)} =   \frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{p=p_\theta, \theta=\theta}.
@@ -334,7 +332,7 @@ The whole procedure for gradient calculation is as below
 \end{algorithm}
 
 
-The quantity $\frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p=p_\theta \\\theta= \theta}}$ can be obtained using automatic differentation.  Similarly $u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta}$ can be computed with automatic differentation and without storing the full jacobian matrix in memory. Therefore matrix-free methods were used to solve for $y$ vector. Since $E$ is ..., and a approximation of physical potential function, it's reasonable to assume that it is positive-definite.
+The quantity $\frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p=p_\theta \\\theta= \theta}}$ can be obtained using automatic differentation.  Similarly $u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta}$ can be computed with automatic differentation and without storing the full jacobian matrix in memory. This matters for bigger batch sizes and molecules, since the memory cost scales quadratically. Matrix-free methods were used to solve for $y$ vector.
 
 
 The implementation details, such as root-solver, are described in \ref{sec:impl}.
@@ -357,9 +355,6 @@ I found out that strict thresholds on fixed point search hindered training compl
 
 
 TK DENOP PICTURES
-\subsubsection{assuming symmetric second derivative}
-
-Hessian symmetry numerical check
 
 \subsubsection{Conjugate gradient}
 I implemented and tested conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
@@ -383,9 +378,12 @@ p_{\theta}^{\beta}:=\argmin_p H(\theta, p, \beta)
 \end{equation}
 \begin{remark}
  For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so $H$ has ... TK HOW TO WRITE should converge better
-
- Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
  \end{remark}
+ \begin{remark}
+   Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
+ \end{remark}
+
+
 
 
 
@@ -396,8 +394,12 @@ p_{\theta}^{\beta}:=\argmin_p H(\theta, p, \beta)
  \frac{d}{d\theta} \mathcal{L}(p_\theta) = \lim_{\beta \to 0} \frac{\pd{H}{\theta}(\theta, p_\theta^\beta, \beta)-\pd{H}{\theta}(\theta, p_\theta^0, 0) }{\beta} = \lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(H(\theta, p_\theta^\beta,\beta) - H(\theta, p_\theta^0, 0)\bigg).
 \end{equation}
 \end{statement}
+\begin{remark}
+
 This formula can be used to numerically approximate the gradient of the loss function.
-Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies to $\pd{E}{\theta}$, although the formula remains true is $\mathcal{L}$ is also a function of $\theta$. For example there might be regularization term added to $\mathcal{L}(p)$.
+Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies to $\pd{E}{\theta}$, although the formula remains true, when $\mathcal{L}$ is also a function of $\theta$. For example there might be regularization term added to $\mathcal{L}(p)$.
+\end{remark}
+
 
 \begin{proof} Let's denote
  \begin{equation}
@@ -467,6 +469,8 @@ The training loss decreased. What is much more important is that density differe
 TK DENOP FOR EQPROP
 \subsubsection{Varying $\beta$ parameter}
 I tested equilibrium propagation for different values of parameter $\beta$.
+
+TK conclusions
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/train_loss_betas.png}
@@ -483,12 +487,12 @@ Equilibrium propagation proved to be more and applicable. I managed to decrease 
 Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer.  This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me when training multiple molecules. I did not encounter it, when training on a single molecule. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance, so more work is required to make it viable for equilibrium propagation.
 It would be beneficial to make the technique compatible with warm-starting, since that would allow for dramatic improvements in stability and training speed.
 
-Figure \ref{fig:stability} shows
+Figure \ref{fig:stability} shows plot of number of unconverged runs plotted against total number of runs. Fixed point search parameters were chosen such that every molecule converged.
 
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/stability_plot.png}
- \caption{PlotPlot}
+ \caption{Number of unconverged density optimization runs for EqProp approach with fixed point correction$= 0.1$, no fixed point correction and jacobian approach with no fixed point correction. }
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:stability}
 \end{figure}
@@ -512,7 +516,10 @@ Therefore, equilibrium propagation was shown to be an alternative method for opt
 
 On more personal level I learned working with version control within group, to conduct literature search, acquired knowledge about
 
-Future directions
+Future directions:
+TK make jacobian approach work
+TK implement warm starting
+TK resolve stability further
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
@@ -543,7 +550,7 @@ The model is rotation invariant ...
     training
     etc
 \subsection{Fixed point search}
-To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5e-3$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$.
+To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5e-3$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$ and the maximum number of gradient descent steps was set to $100$.
 \subsection{Training}
 I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$.
 % \subsubsection{Gradient calculation}
@@ -553,7 +560,7 @@ I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ 
 %
 % Both vjp can be obtained efficiently using automatic differen in PyTorch, so naturally I preferred using matrix free methods.
 
-\subsubsection{Fixed point correcion}\label{sec:fpc}
+\subsubsection{Fixed point correction}\label{sec:fpc}
 Fixed point correction is a technique for stabilizing DEQ training. The technique described in \cite{opticalflow}, \cite{geng2023torchdeq}
 and \cite{burger2025dequify} is as follows. Given fixed point trajectory $p_0= p_{gs}, p_1,\ldots, p_T\approx  \pth $ we uniformly select $N$ intermediate points $p_{i_1}, p_{i_2}, \ldots , p_{i_N}=p_T$ and
 
