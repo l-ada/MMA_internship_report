@@ -46,7 +46,7 @@ During my internship at Hamprecht Lab, an investigation was conducted on fine-tu
 
 The goal of the internship was to adapt and implement the approach from the preprint \cite{neuralscf} to a setting used in Hamprecht lab.
 
-Two approaches to gradient computation were implemented: equilibrium propagation and jacobian approach. A stability issue arose, but was subsequently resolved. The results showed that the equilibrium propagation approach might be viable, whereas the jacobian approach did not work at all.
+Two approaches to gradient computation were implemented: equilibrium propagation and Jacobian approach. A stability issue arose, but was subsequently resolved. The results indicated that the equilibrium propagation approach could be viable, while the Jacobian approach proved ineffective.
 \end{abstract}
 
 
@@ -57,14 +57,14 @@ Two approaches to gradient computation were implemented: equilibrium propagation
 
 %  Since $E(\theta, p)$ is a approximation of physical potential, it's reasonable to assume that hessian is positive-definite at the minimum.
 
-The current focus of the ScientificAI group is on applying deep learning to orbital-free density functional theory (OF-DFT).
+ ScientificAI group is currently focusing on applying deep learning to orbital-free density functional theory (OF-DFT).
 
  To accurately predict molecular properties, quantum mechanics formalism can be employed to solve for the electronic structure, but for big molecules this approach is not tractable.
 
 However a theorem by Hohenberg-Kohn has shown that all that's needed to know the electronic structure is the ground state electron density $\rho_{gs}$ and that there exists an energy functional such that
-\begin{equation}
+\begin{equation*}
  \rho_{gs} = \argmin_\rho E[\rho].
-\end{equation}
+\end{equation*}
 
 
 Exact form of the energy functional $E[\rho]$ remains unknown. The goal of  project is to approximate the energy functional $E[\rho]$ using a deep learning model (a surrogate functional) denoted as $E(\theta, \rho)$.
@@ -85,13 +85,13 @@ The integral of the electron density yields the total number of electrons in the
 N = \int_{\mathbb{R}^3} \rho(\vec{r}) d\vec{r} = \sum_{i=1}^n p_i \int_{\mathbb{R}^3} \omega_i(\vec{r}) d\vec{r}.
 \]
 
-By defining a vector $w = (w_1, \ldots, w_n)$ where each component is:
+By defining a vector $w = (w_1, \ldots, w_n)$, where each component is:
 
 \[
 w_i = \int_{\mathbb{R}^3} \omega_i(\vec{r}) d\vec{r},
 \]
 
-we can express the total electron count as:
+we can express the electron number as:
 
 \[
 \langle w, p \rangle = N.
@@ -101,7 +101,7 @@ we can express the total electron count as:
 
 \newpage
 
-\section{Theory part}
+\section{Problem statement}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information, and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients.  We assume that $E(\theta, M ,p)$ is smooth with respect to $\theta$ and $p$.
 By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative $\theta$, when all other arguments are held constant. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ is a matrix of size $n \times n$, and $\frac{\partial^2 E}{\partial \theta \partial p}$ is a matrix of size $n \times k $.
 
@@ -156,17 +156,17 @@ Although straightforward there are a few issues with this approach.
 \begin{itemize}
  \item backpropagation through the whole trajectory is very memory intensive, therefore fixed point search can be run for very low number of steps.
  \item the gradient depends on the starting point
- \item can't apply warm-starting to speed up the training. In theory, for jacobian and equilibrium propagation approach we can find the fixed point once and reuse it in subsequent runs as a starting point, therefore making training much faster.
+ \item can't apply warm-starting to speed up the training. In theory, for Jacobian and equilibrium propagation approach we can find the fixed point once and reuse it in subsequent runs as a starting point, therefore making training much faster.
  However, due to stability issues and difficulties of tracking loss, I ended up not using warm-starting.
 \end{itemize}
 
 
-\subsection{Implicit function theorem}
-This can be accomplished by using implicit function theorem. In the rest of the document I will refer to computation of the gradient using this method as \textbf{jacobian approach}.
+\section{Implicit function theorem}
+Gradient calculation can be accomplished by using implicit function theorem. In the rest of the document I will refer to computation of the gradient using this method as \textbf{Jacobian approach}.
 
 I use the version of implicit function theorem from \cite{zucchet2022beyond}, which in turn is taken from \cite{dontchev2009implicit}.
 \begin{theorem}[Implicit Function Theorem, \cite{zucchet2022beyond} ]
-Let $G(\theta, p): \R^k \times \R^n \to \R^n$ be $C^1$ and $(\bar{\theta}, \bar{p})$ such that $G(\bar{\theta},\bar{p})=0$. If the jacobian
+Let $G(\theta, p): \R^k \times \R^n \to \R^n$ be $C^1$ and $(\bar{\theta}, \bar{p})$ such that $G(\bar{\theta},\bar{p})=0$. If the Jacobian
 $\pd{G}{p}(\bar{\theta},\bar{p})$ is non-singular, then there exists an open neighbourhood $U$ of $\bar{\theta} $ and a function $p(\theta):U \to \R^n$, such that $G(\theta, p(\theta)) = 0$ and $p(\bar{\theta}) = \bar{p}$. Moreover, $p(\theta)$ is also differentiable with
 its derivative given by
 \begin{equation}
@@ -174,7 +174,7 @@ its derivative given by
 \end{equation}
 
 \end{theorem}
-In our case $G = \pd{E}{p}$. Since our model is $C^1$/smooth with respect to its arguments and the hessian of $E$ is assummed to be positive definite, the conditions of the theorem are satisfied.
+In our case $G = \pd{E}{p}$. Since our model is smooth with respect to its arguments and the hessian of $E$ is assumed to be positive definite, the conditions of the theorem are satisfied.
 
 
 \subsubsection{Basis-dependent approach}
@@ -285,12 +285,12 @@ Therefore the full gradient of $\mathcal{L}(p_\theta)$ is equal to
  \dth{\mathcal{L}(p_\theta)} = - (p_\theta - p_{gs})\bigg(\pd{F}{p}(\theta,p_\theta)\bigg)^{-1} \pd{F}{\theta}(\theta,p_\theta).
 \end{equation}
  \begin{remark}
- The jacobian $\pd{F}{p}$ is not invertible, since $F$ is a projection.
+ The Jacobian $\pd{F}{p}$ is not invertible, since $F$ is a projection.
   \begin{equation}
    F(\theta, p) = \sum_{i=1}^{n-1} \inner{\pd{E}{p}(\theta, p)}{e_i} e_i +  0 \cdot w
   \end{equation}
 %
- The jacobian matrix in the basis $(e_0,...,e_{n-1},w)$ can be written as \begin{equation}
+ The Jacobian matrix in the basis $(e_0,...,e_{n-1},w)$ can be written as \begin{equation}
                       \frac{\partial F}{\partial p}\bigg|_{p=\pth} =\begin{bmatrix}
 H & 0 \\
 0 & 0
@@ -350,7 +350,7 @@ The whole procedure for gradient calculation is as below
 \end{algorithm}
 
 
-The quantity $\frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p=p_\theta \\\theta= \theta}}$ can be obtained using automatic differentation.  Similarly $u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta}$ can be computed with automatic differentation and without storing the full jacobian matrix in memory. This matters for bigger batch sizes and molecules, since the memory cost scales quadratically. Matrix-free methods were used to solve for $y$ vector.
+The quantity $\frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p=p_\theta \\\theta= \theta}}$ can be obtained using automatic differentation.  Similarly $u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta}$ can be computed with automatic differentation and without storing the full Jacobian matrix in memory. This matters for bigger batch sizes and molecules, since the memory cost scales quadratically. Matrix-free methods were used to solve for $y$ vector.
 
 
 The implementation details, such as root-solver, are described in \ref{sec:impl}.
@@ -365,7 +365,7 @@ I found out that strict thresholds on fixed point search hindered training compl
 \begin{figure}[h!]
  \centering
  \includegraphics[scale=0.5]{images/loss_comparison.png}
- \caption{Comparison of training loss for jacobian and EP approaches. Jacobian approach decreases loss at first, but starts diverging later. Equilibrium propagation seems to be more stable.}
+ \caption{Comparison of training loss for Jacobian and EP approaches. Jacobian approach decreases loss at first, but starts diverging later. Equilibrium propagation seems to be more stable.}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:jac-eqprop-loss}
 \end{figure}
@@ -376,52 +376,47 @@ TK DENOP PICTURES
 
 \subsubsection{Conjugate gradient}
 I implemented and tested conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
-\subsubsection{Summary of jacobian appraoch}
+\subsubsection{Summary of Jacobian appraoch}
 
- For reasons yet unknown to me I have not been able to make jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
+ For reasons yet unknown to me I have not been able to make Jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that Jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
 
 
-\subsection{ Equilibrium propagation}
+\section{ Equilibrium propagation}
 
 \subsubsection{Base version}
 During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}), which is an alternative method of computing the gradient with respect to model parameters.
 Let's denote
 \begin{equation}
-H(\theta, p, \beta) := \beta \mathcal{L}(p) + E(\theta, p),
+T(\theta, p, \beta) := \beta \mathcal{L}(p) + E(\theta, p),
 \end{equation}
 where $\beta \in \R$.
  This is called \textbf{total energy} in \cite{eqprop}. Let's also denote
 \begin{equation}
-p_{\theta}^{\beta}:=\argmin_p H(\theta, p, \beta)
+p_{\theta}^{\beta}:=\argmin_p T(\theta, p, \beta)
 \end{equation}
 \begin{remark}
- For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so $H$ has ... TK HOW TO WRITE should converge better
+ For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so $T$ has ... TK HOW TO WRITE should converge better
  \end{remark}
  \begin{remark}
-   Since $H(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
+   Since $T(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
  \end{remark}
-
-
-
-
-
 
 
 \begin{statement}[Equilibrium propagation formula]
  \begin{equation}
- \frac{d}{d\theta} \mathcal{L}(p_\theta) = \lim_{\beta \to 0} \frac{\pd{H}{\theta}(\theta, p_\theta^\beta, \beta)-\pd{H}{\theta}(\theta, p_\theta^0, 0) }{\beta} = \lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(H(\theta, p_\theta^\beta,\beta) - H(\theta, p_\theta^0, 0)\bigg).
+ \frac{d}{d\theta} \mathcal{L}(p_\theta) = \lim_{\beta \to 0} \frac{\pd{T}{\theta}(\theta, p_\theta^\beta, \beta)-\pd{T}{\theta}(\theta, p_\theta^0, 0) }{\beta} = \lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(T(\theta, p_\theta^\beta,\beta) - T(\theta, p_\theta^0, 0)\bigg).
 \end{equation}
 \end{statement}
 \begin{remark}
 
 This formula can be used to numerically approximate the gradient of the loss function.
-Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{H}{\theta}$ simplifies to $\pd{E}{\theta}$, although the formula remains true, when $\mathcal{L}$ is also a function of $\theta$. For example there might be regularization term added to $\mathcal{L}(p)$.
+Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{T}{\theta}$ simplifies to $\pd{E}{\theta}$, although the formula remains true, when $\mathcal{L}$ is also a function of $\theta$. For example there might be regularization term added to $\mathcal{L}(p)$.
 \end{remark}
 
 
 \begin{proof} Let's denote
  \begin{equation}
- G(\theta, \beta) := H(\theta, p_\theta^\beta, \beta).
+ G(\theta, \beta) := T(\theta, p_\theta^\beta, \beta).
 \end{equation}
 Because $p_\theta^\beta$ is $C^2$, $G$ is $C^2$ and so we have the symmetry of second derivatives
 \begin{equation}
@@ -430,26 +425,26 @@ Because $p_\theta^\beta$ is $C^2$, $G$ is $C^2$ and so we have the symmetry of s
 We have
 
 \begin{equation}\label{eqcond}
- \frac{dG}{d\beta} = \frac{\partial H}{\partial \beta} + \frac{\partial H}{\partial p}(\theta,\pthb, \beta)\frac{\partial \pthb}{\partial \beta}.
+ \frac{dG}{d\beta} = \frac{\partial T}{\partial \beta} + \frac{\partial T}{\partial p}(\theta,\pthb, \beta)\frac{\partial \pthb}{\partial \beta}.
 \end{equation}
 By definition
 \begin{equation}
-\frac{\partial H}{\partial p}(\theta,\pthb, \beta)=0.
+\frac{\partial T}{\partial p}(\theta,\pthb, \beta)=0.
 \end{equation}
 The second term vanishes, leaving us with
 \begin{equation}\label{pvanish}
-  \frac{dG}{d\beta}\big|_{\beta=0} = \frac{\partial H}{\partial \beta}(\theta, \pth, 0)=\mathcal{L}(\pth).
+  \frac{dG}{d\beta}\big|_{\beta=0} = \frac{\partial T}{\partial \beta}(\theta, \pth, 0)=\mathcal{L}(\pth).
 \end{equation}
 Analogically
 \begin{equation}\label{thvanish}
- \frac{dG}{d\theta}=\frac{\partial H}{\partial \theta}(\theta, \pthb, \beta).
+ \frac{dG}{d\theta}=\frac{\partial T}{\partial \theta}(\theta, \pthb, \beta).
 \end{equation}
 
 TK Explain, why it's different iwe we switch back the order of derivatives.
 In the end we obtain
 \begin{align}
  \frac{d}{d\theta} \mathcal{L}(p_\theta) &=\frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0}=\\
- &=\lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(H(\theta, p_\theta^\beta,\beta) - H(\theta, p_\theta^0, 0)\bigg)
+ &=\lim_{\beta \to 0}\frac{1}{\beta} \pd{}{\theta} \bigg(T(\theta, p_\theta^\beta,\beta) - T(\theta, p_\theta^0, 0)\bigg)
 \end{align}
 
 \end{proof}
@@ -457,11 +452,11 @@ In the end we obtain
 \begin{remark}
  It turns out the formula remains the same if we change the fixed point definition to
 \begin{equation}
- p_\theta^\beta = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} H(\theta, p, \beta)
+ p_\theta^\beta = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} T(\theta, p, \beta)
 \end{equation}
 In this case equilibrium condition \ref{eqcond} changes to
 \begin{equation*}
-P\bigg(\frac{\partial H}{\partial p}(\theta,\pthb, \beta)\bigg)=0,
+P\bigg(\frac{\partial T}{\partial p}(\theta,\pthb, \beta)\bigg)=0,
 \end{equation*}
 where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does not depend on $\beta$ nor $\theta$ both \ref{pvanish} and \ref{thvanish} also stay the same and so the final formula remains unchanged.
 
@@ -473,16 +468,16 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 \caption{Equilibrium propagation algorithm}
 \begin{algorithmic}[1]
 \Require Data $p_{gs}$, model parameters $\theta$, $\beta>0$.
-\State  Solve for $p_\theta^0  = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} H(\theta, p, 0).$
-\State Solve for $p_\theta^\beta  = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} H(\theta, p, \beta).$
-\State Compute gradient $\dth{\mathcal{L}(\pth)} = \frac{1}{\beta} \pd{}{\theta} \bigg(H(\theta, p_\theta^\beta,\beta) - H(\theta, p_\theta^0, 0)\bigg)$
+\State  Solve for $p_\theta^0  = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} T(\theta, p, 0).$
+\State Solve for $p_\theta^\beta  = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} T(\theta, p, \beta).$
+\State Compute gradient $\dth{\mathcal{L}(\pth)} = \frac{1}{\beta} \pd{}{\theta} \bigg(T(\theta, p_\theta^\beta,\beta) - T(\theta, p_\theta^0, 0)\bigg)$
 \State \Return $\dth{\mathcal{L}(\pth)}$
 \end{algorithmic}
 \end{algorithm}
 
 
 \subsection{Equilibrium propagation experiments}
-In contrast to jacobian approach I managed to finetune the model on single molecule.
+In contrast to Jacobian approach I managed to finetune the model on single molecule.
 The training loss decreased. What is much more important is that density difference also decreased, when fixed point search was run from a different starting point.
 TK DENOP FOR EQPROP
 \subsubsection{Varying $\beta$ parameter}
@@ -498,7 +493,7 @@ TK conclusions
 \end{figure}
 
 \subsubsection{Summary of equilibrium propagation approach}
-Equilibrium propagation proved to be more successful than jacobian approach. I managed to decrease the implicit loss on one molecule, but more work needs to be done to make training on full dataset possible.
+Equilibrium propagation proved to be more successful than Jacobian approach. I managed to decrease the implicit loss on one molecule, but more work needs to be done to make training on full dataset possible.
 \section{Other results}
 
 \subsection{Stability issues}
@@ -512,7 +507,7 @@ Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotte
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/stability_plot.png}
- \caption{Number of unconverged density optimization runs for EqProp approach with jacobian approach with no fixed point correction (top curve),no fixed point correction (middle curve) and  fixed point correction $=0.1$ (bottom curve).}
+ \caption{Number of unconverged density optimization runs for EqProp approach with Jacobian approach with no fixed point correction (top curve),no fixed point correction (middle curve) and  fixed point correction $p=0.1$ (bottom curve).}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:stability}
 \end{figure}
@@ -529,7 +524,7 @@ After resolving stability issue I tested equilibrium propagation approach on a s
 
 \clearpage
 \section{Conclusions}
-During my internship at Hamprecht Lab, I implemented and tested two approaches to implicit loss calculations. I have found that jacobian approach was not successful for fine-tuning and did not results in improvement of key metrics.
+During my internship at Hamprecht Lab, I implemented and tested two approaches to implicit loss calculations. I have found that Jacobian approach was not successful for fine-tuning and did not results in improvement of key metrics.
 
 In contrast, the equilibrium propagation approach successfully decreased targeted metrics. However, I encountered significant model training stability issues. After conducting an extensive literature search, I found the technique for alleviating the issues and adapted it to my setting.
 
@@ -537,8 +532,11 @@ Therefore, equilibrium propagation was shown to be an alternative method for opt
 
 On a personal level, this experience taught me the importance of working with version control within a group and conducting thorough literature searches.
 
+Future work would involve investigating Jacobian approach further. Since both methods should give the exact same gradient the issue lies either in faulty implementation or some unforeseen complications.
+
+
 Future directions:
-TK make jacobian approach work
+TK make Jacobian approach work
 TK make fine-tuning work for full dataset
 TK implement warm starting
 TK resolve stability further
@@ -553,7 +551,7 @@ TK tracking loss function improvements for different molecules is quite hard
 \section{Implementation details} \label{sec:impl}
 
 \subsubsection{Model architecture}
-I used a standard Graphormer model, which was trained on combination of QMUGS and QM9 datasets for $90$ epochs. The model architecture was based on the one in article \cite{zhang2024overcoming}.
+I used a standard Graphormer model, which was trained on combination of QMUGS and QM9 datasets for $90$ epochs. The model architecture was based on article \cite{zhang2024overcoming}.
 
 \subsection{Fixed point search}
 To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5\cdot 10^{-3}$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$ and the maximum number of gradient descent steps was set to $100$.
@@ -584,9 +582,19 @@ Finally, we compute the gradient based on the loss function
 \begin{equation}
  \mathcal{L}_{FPC}(\theta) = \sum_{k=1}^{n}\gamma^{n-k+1}\mathcal{L}(p_{i_k}).
 \end{equation}
-\subsection{Linear equation}
-TK solving yJ = b with vjp and jvp calls.
-\subsection{Computational graph breakage}
-TK part about breaking computational graph
+\subsection{Solving linear equation}
+To find $y = \underset{u\in \mathbb{R}^n}{\mathrm{argmin}} \bigg\|u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta} + (p_\theta-p_{gs})\bigg\|^2$ I planned gradient descent algorithm, since obtaining the matrix involved in the problem is computationally expensive and scales quadratically with $n$.
+The derivative of function
+\begin{equation*}
+ u\mapsto \bigg\|u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta} + (p_\theta-p_{gs})\bigg\|^2
+ \end{equation*}
+ is equal to
+ \begin{equation*}
+  2 \bigg( u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta} + (p_\theta-p_{gs})  \bigg) \cdot \bigg(\frac{\partial F}{\partial p}\bigg)^T.
+\end{equation*}
+
+Therefore it's possible to calculate the derivative without materializing the full matrix using vector-jacobian and jacobian-vector product in PyTorch.
+
+I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence.
 
 \end{document}
