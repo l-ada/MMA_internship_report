@@ -476,23 +476,25 @@ TK conclusions
  \includegraphics[scale=0.5]{images/train_loss_betas.png}
  \caption{Training loss for different valus of $\beta$ parameter.}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
- \label{fig:jac-eqprop-loss}
+ \label{fig:betas}
 \end{figure}
 
 \subsubsection{Summary of equilibrium propagation approach}
-Equilibrium propagation proved to be more and applicable. I managed to decrease the implicit loss on one molecule
+Equilibrium propagation proved to be more and applicable. I managed to decrease the implicit loss on one molecule, but more work needs to be done to make training on full dataset viable.
 \section{Other results}
 
 \subsection{Stability issues}
-Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer.  This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me when training multiple molecules. I did not encounter it, when training on a single molecule. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance, so more work is required to make it viable for equilibrium propagation.
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify}, and \cite{geng2023torchdeq}. This was also the case for me when training multiple molecules; however, I did not encounter it when training on a single molecule. To alleviate the issue, I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance; therefore, more work is required to make it suitable for fine-tuning.
+
+Implementation and details of the fixed point correction technique are described in section \ref{sec:fpc}.
+
 It would be beneficial to make the technique compatible with warm-starting, since that would allow for dramatic improvements in stability and training speed.
 
-Figure \ref{fig:stability} shows plot of number of unconverged runs plotted against total number of runs. Fixed point search parameters were chosen such that every molecule converged.
-
+Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotted against the total number of runs. The fixed point search parameters were chosen such that every molecule converged before fine-tuning.
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/stability_plot.png}
- \caption{Number of unconverged density optimization runs for EqProp approach with fixed point correction$= 0.1$, no fixed point correction and jacobian approach with no fixed point correction. }
+ \caption{Number of unconverged density optimization runs for EqProp approach with jacobian approach with no fixed point correction (top curve),no fixed point correction (middle curve) and  fixed point correction $=0.1$ (bottom curve).}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:stability}
 \end{figure}
@@ -501,7 +503,7 @@ Figure \ref{fig:stability} shows plot of number of unconverged runs plotted agai
 
 \subsubsection{Training on more than one molecule}
 After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 and 1800 molecules taken from [name of the dataset, QMUGS or QM9]. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
-TK put training loss and validation loss curves here.
+
 
 \begin{remark}
  The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints the gradient is computed in mini-batches. It's possible, that \textbf{stochastic bilevel optimization} requires adaptation to make it work due to its nested structure or effect on variance of the gradient update.
@@ -514,28 +516,19 @@ However equilibrium propagation approach did decrease targeted metrics. I have a
 
 Therefore, equilibrium propagation was shown to be an alternative method for optimizing losses defined implicitly, even when jacobian approach doesn't work.
 
-On more personal level I learned working with version control within group, to conduct literature search, acquired knowledge about
+On more personal level I learned working with version control within group, to conduct literature search, acquired knowledge about, TK how to do do experiments better.
 
 Future directions:
 TK make jacobian approach work
 TK implement warm starting
 TK resolve stability further
+TK tracking loss function improvements for different molecules is quite hard
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
 
 
-\section{Appendices}
 
-
-
-\appendix
-% \appendixname{Proof of}
-\section{Proof of implicit function theorem}
-
-architecture graph, training details (lr, optimizer, etc), rootfinind details.
-Further experiments
-fixed point correction for EMA and various p values.
 \appendix
 \section{Implementation details} \label{sec:impl}
 
@@ -551,8 +544,9 @@ The model is rotation invariant ...
     etc
 \subsection{Fixed point search}
 To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5e-3$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$ and the maximum number of gradient descent steps was set to $100$.
-\subsection{Training}
-I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$.
+
+\subsection{Fine-tuning on single molecule}
+I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$ for $4$ epochs. Each epoch consisted of $80$ weight updates.
 % \subsubsection{Gradient calculation}
 % Gradients are obtained using automatic differentation
 % The algorithm for finding fixed point is projected gradient descent. Its starting point was set to ground state $p_{gs}$.
@@ -560,9 +554,22 @@ I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ 
 %
 % Both vjp can be obtained efficiently using automatic differen in PyTorch, so naturally I preferred using matrix free methods.
 
-\subsubsection{Fixed point correction}\label{sec:fpc}
-Fixed point correction is a technique for stabilizing DEQ training. The technique described in \cite{opticalflow}, \cite{geng2023torchdeq}
-and \cite{burger2025dequify} is as follows. Given fixed point trajectory $p_0= p_{gs}, p_1,\ldots, p_T\approx  \pth $ we uniformly select $N$ intermediate points $p_{i_1}, p_{i_2}, \ldots , p_{i_N}=p_T$ and
+\subsection{Fixed point correction}\label{sec:fpc}
+Fixed point correction is a technique for stabilizing DEQ training. The technique is described in \cite{opticalflow}, \cite{geng2023torchdeq}
+and \cite{burger2025dequify}. It is as follows.
 
+Given fixed point trajectory $p_0= p_{gs}, p_1,\ldots, p_T\approx  \pth $ we uniformly select $N$ intermediate points $p_{i_1}, p_{i_2}, \ldots , p_{i_N}=p_T$ and compute the loss
+\begin{equation}
+ \mathcal{L}_{FPC}(\theta) = \sum_{k=1}^{n}\gamma^{n-k}\mathcal{L}(p_{i_k}),
+\end{equation}
+where gradient for each individual loss $\mathcal{L}(p_{i_k})$ is computed by treating as if $p_{i_k}$ was a fixed point. Typical value of $\gamma$ parameter is $0.8$ and it was also the one I used.
+\par
+I modified this technique in a stochastic way to account for varying number of fixed point steps for different molecules.
+
+Let's fix $p\in (0,1)$. Then, for each point in fixed point trajectory, we decide select the intermediate point with probability $p$.
+Finally, we compute the gradient based on the loss function
+\begin{equation}
+ \mathcal{L}_{FPC}(\theta) = \sum_{k=1}^{n}\gamma^{n-k+1}\mathcal{L}(p_{i_k}).
+\end{equation}
 
 \end{document}
