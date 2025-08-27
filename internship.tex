@@ -1,4 +1,4 @@
-\documentclass[a4paper,10pt]{report}
+\documentclass[a4paper,10.5pt]{report}
 \usepackage[utf8]{inputenc}
 
 % Title Page
@@ -583,7 +583,7 @@ Finally, we compute the gradient based on the loss function
  \mathcal{L}_{FPC}(\theta) = \sum_{k=1}^{n}\gamma^{n-k+1}\mathcal{L}(p_{i_k}).
 \end{equation}
 \subsection{Solving linear equation}
-To find $y = \underset{u\in \mathbb{R}^n}{\mathrm{argmin}} \bigg\|u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta} + (p_\theta-p_{gs})\bigg\|^2$ I planned gradient descent algorithm, since obtaining the matrix involved in the problem is computationally expensive and scales quadratically with $n$.
+To solve linear equation I used gradient descent algorithm, since obtaining the matrix involved in the problem is computationally expensive and scales quadratically with $n$.
 The derivative of function
 \begin{equation*}
  u\mapsto \bigg\|u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta} + (p_\theta-p_{gs})\bigg\|^2
@@ -595,5 +595,5 @@ The derivative of function
 
 Therefore it's possible to calculate the derivative without materializing the full matrix using vector-jacobian and jacobian-vector product in PyTorch.
 
-I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence. This mi
+I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence. This might  indicate, that jacobian possesses big eigenvalues, which is further corroborated by estimation made using power method.
 \end{document}
