@@ -320,6 +320,8 @@ That is to say
 Therefore, the formula doesn't change, however some algorithms for solving linear systems might not work, if they rely on invertibility.
 
 \end{remark}
+
+
 In the rest of the report I will reference the procedure of finding $y$ vector as \textbf{solving the linear equation}.
 
 
@@ -352,8 +354,6 @@ The whole procedure for gradient calculation is as below
 
 The quantity $\frac{\partial (\inner{y}{F})}{\partial \theta}\bigg|_{\substack{p=p_\theta \\\theta= \theta}}$ can be obtained using automatic differentation.  Similarly $u \frac{\partial F}{\partial p}\bigg|_{p=p_\theta}$ can be computed with automatic differentation and without storing the full Jacobian matrix in memory. This matters for bigger batch sizes and molecules, since the memory cost scales quadratically. Matrix-free methods were used to solve for $y$ vector.
 
-
-The implementation details, such as root-solver, are described in \ref{sec:impl}.
 
 \subsection{Jacobian approach experiments and results}
 
@@ -478,12 +478,11 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 
 \subsection{Equilibrium propagation experiments}
 In contrast to Jacobian approach I managed to finetune the model on single molecule.
-The training loss decreased. What is much more important is that density difference also decreased, when fixed point search was run from a different starting point.
+The training loss decreased. What is more telling is that loss also decreased, when fixed point search was run from a different starting point.
 TK DENOP FOR EQPROP
 \subsubsection{Varying $\beta$ parameter}
 I tested equilibrium propagation for different values of parameter $\beta$.
-
-TK conclusions
+As shown in \ref{fig:betas}, choosing too small of a $\beta$ can negatively affect the performance.
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/train_loss_betas.png}
@@ -497,13 +496,15 @@ Equilibrium propagation proved to be more successful than Jacobian approach. I m
 \section{Other results}
 
 \subsection{Stability issues}
-Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify}, and \cite{geng2023torchdeq}. This was also the case for me when training multiple molecules; however, I did not encounter it when training on a single molecule. To alleviate the issue, I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance; therefore, more work is required to make it suitable for fine-tuning.
+Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, fixed point search takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify}, and \cite{geng2023torchdeq}. This was also the case for me when training multiple molecules; however, I did not encounter it when training on a single molecule.
+
+To alleviate the issue, I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance; therefore, more work is required to make it suitable for fine-tuning.
 
 Implementation and details of the fixed point correction technique are described in section \ref{sec:fpc}.
 
 It would be beneficial to make the technique compatible with warm-starting, since that would allow for dramatic improvements in stability and training speed.
 
-Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotted against the total number of runs. The fixed point search parameters were chosen such that every molecule converged before fine-tuning.
+Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotted against the total number of runs. The fixed point search parameters were chosen such that every molecule converged before fine-tuning. Results show, that fixed point correction is an effective measure to stabilize training.
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/stability_plot.png}
@@ -513,12 +514,11 @@ Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotte
 \end{figure}
 
 
-
 \subsubsection{Training on more than one molecule}
-After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 and 1800 molecules taken from [name of the dataset, QMUGS or QM9]. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
+After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 molecules. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
 
 \begin{remark}
- The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints the gradient is computed in mini-batches. It's possible, that \textbf{stochastic bilevel optimization} requires adaptation to make it work due to its nested structure or effect on variance of the gradient update.
+ The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints the gradient is computed in mini-batches. It's possible, than an adaptation is required to make it work, which would make it into a problem of \textbf{stochastic bilevel optimization}. Due to time constraints I did not manage to resolve the problem.
 \end{remark}
 
 
@@ -595,6 +595,5 @@ The derivative of function
 
 Therefore it's possible to calculate the derivative without materializing the full matrix using vector-jacobian and jacobian-vector product in PyTorch.
 
-I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence.
-
+I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence. This mi
 \end{document}
