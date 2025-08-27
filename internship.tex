@@ -10,6 +10,7 @@
 \usepackage{algpseudocode}
 \usepackage{hyperref}
 \usepackage{graphicx}
+\usepackage{float}
 \newtheorem{theorem}{Theorem}
 \newtheorem{statement}{Statement}
 \newtheorem{lemma}{Lemma}
@@ -466,7 +467,7 @@ The training loss decreased. What is much more important is that density differe
 TK DENOP FOR EQPROP
 \subsubsection{Varying $\beta$ parameter}
 I tested equilibrium propagation for different values of parameter $\beta$.
-\begin{figure}[h!]
+\begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/train_loss_betas.png}
  \caption{Training loss for different valus of $\beta$ parameter.}
@@ -478,16 +479,22 @@ I tested equilibrium propagation for different values of parameter $\beta$.
 Equilibrium propagation proved to be more and applicable. I managed to decrease the implicit loss on one molecule
 \section{Other results}
 
-TK deno picture
 \subsection{Stability issues}
 Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, obtaining the fixed point takes longer and longer.  This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify} and \cite{geng2023torchdeq}.This was also the case for me when training multiple molecules. I did not encounter it, when training on a single molecule. To alleviate the issue I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance, so more work is required to make it viable for equilibrium propagation.
 It would be beneficial to make the technique compatible with warm-starting, since that would allow for dramatic improvements in stability and training speed.
 
+Figure \ref{fig:stability} shows
 
-TK
+\begin{figure}[H]
+ \centering
+ \includegraphics[scale=0.5]{images/stability_plot.png}
+ \caption{PlotPlot}
+ % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
+ \label{fig:stability}
+\end{figure}
 
-TK create pictures of gradients of the model while trained-no implicit loss, diverged and stabilized for both eqprop and jacobian approach.
-Run them on the same settings
+
+
 \subsubsection{Training on more than one molecule}
 After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 and 1800 molecules taken from [name of the dataset, QMUGS or QM9]. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
 TK put training loss and validation loss curves here.
@@ -495,7 +502,8 @@ TK put training loss and validation loss curves here.
 \begin{remark}
  The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints the gradient is computed in mini-batches. It's possible, that \textbf{stochastic bilevel optimization} requires adaptation to make it work due to its nested structure or effect on variance of the gradient update.
 \end{remark}
-\newpage
+
+\clearpage
 \section{Conclusions}
 During the course of my internship at Hamprech Lab I have implemented and tested two approaches to implicit loss calculations. I have found that jacobian approach was not viable for the model I used and did not results in any metric improvement.
 However equilibrium propagation approach did decrease targeted metrics. I have also encountered grevious model training stability issues and after extensive literature search adapted the technique to my setting.
