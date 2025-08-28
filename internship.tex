@@ -341,7 +341,7 @@ treat $y$ as constant vector and pull it inside partial derivative to obtain
 
 The whole procedure for gradient calculation is as below
 \begin{algorithm}[H]
-\caption{Jacobian approach gradient Calculation}
+\caption{Jacobian approach gradient calculation}
 \begin{algorithmic}[1]
 \Require Data $p_{gs}$, model parameters $\theta$
 \State  Solve for $p_\theta  = \argmin_{\substack{p \in \R^n \\ p: \inner{p}{w}=N }} E(\theta, p).$
@@ -365,7 +365,7 @@ I found out that strict thresholds on fixed point search hindered training compl
 \begin{figure}[h!]
  \centering
  \includegraphics[scale=0.5]{images/loss_comparison.png}
- \caption{Comparison of training loss for Jacobian and EP approaches. Jacobian approach decreases loss at first, but starts diverging later. Equilibrium propagation seems to be more stable.}
+ \caption{Comparison of training loss for Jacobian and equilibrium propagation approaches. Jacobian approach decreases loss at first, but starts diverging later. Equilibrium propagation seems to be more stable.}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:jac-eqprop-loss}
 \end{figure}
@@ -375,13 +375,13 @@ I found out that strict thresholds on fixed point search hindered training compl
 I implemented and tested conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
 \subsubsection{Summary of Jacobian appraoch}
 
- have not been able to make Jacobian approach perform for the purpose of fine-tuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve.  This suggests, that Jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate. I include more details  in section \ref{jacmat}.
+ I have not been able to make Jacobian approach perform for the purpose of fine-tuning the model. Despite loss function decreasing during course of the training, when started from a different starting point the loss did not decrease. This suggests, that Jacobian approach did not in fact move the fixed point $\pth$ closer to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate. I include more details  in section \ref{jacmat}.
 
 
 \section{ Equilibrium propagation}
 
 \subsubsection{Base version}
-During my internship I also implemented and tested optimization using Equilibrium Propagation (see \cite{eqprop}, \cite{zucchet2022beyond}), which is an alternative method of computing the gradient with respect to model parameters.
+During my internship I also implemented and tested optimization using Equilibrium Propagation (or EQ,EqProp, see \cite{eqprop}, \cite{zucchet2022beyond}), which is an alternative method of computing the gradient with respect to model parameters.
 Let's denote
 \begin{equation}
 T(\theta, p, \beta) := \beta \mathcal{L}(p) + E(\theta, p),
@@ -392,7 +392,7 @@ where $\beta \in \R$.
 p_{\theta}^{\beta}:=\argmin_p T(\theta, p, \beta)
 \end{equation}
 \begin{remark}
- For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so it acts as a regularizer.
+ For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ acts as a regularizer.
  \end{remark}
  \begin{remark}
    Since $T(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
@@ -415,7 +415,7 @@ Since in our case $\mathcal{L}(p)$ doesn't depend on $\theta$, $\pd{T}{\theta}$ 
  \begin{equation}
  G(\theta, \beta) := T(\theta, p_\theta^\beta, \beta).
 \end{equation}
-Because $p_\theta^\beta$ is $C^2$, $G$ is $C^2$ and so we have the symmetry of second derivatives
+Because $p_\theta^\beta$ is $C^2$, $G$ is $C^2$ and so we have symmetry of second derivatives
 \begin{equation}
  \frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta} =\frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0, \theta = \theta}
 \end{equation}
@@ -424,11 +424,11 @@ We have
 \begin{equation}\label{eqcond}
  \frac{dG}{d\beta} = \frac{\partial T}{\partial \beta} + \frac{\partial T}{\partial p}(\theta,\pthb, \beta)\frac{\partial \pthb}{\partial \beta}.
 \end{equation}
-By definition
+Since $T$ attains minimum at $\pthb$ we have
 \begin{equation}
 \frac{\partial T}{\partial p}(\theta,\pthb, \beta)=0.
 \end{equation}
-The second term vanishes, leaving us with
+This leaves us with
 \begin{equation}\label{pvanish}
   \frac{dG}{d\beta}\big|_{\beta=0} = \frac{\partial T}{\partial \beta}(\theta, \pth, 0)=\mathcal{L}(\pth).
 \end{equation}
@@ -481,10 +481,18 @@ As shown in \ref{fig:betas}, choosing too small of a $\beta$ can negatively affe
 \begin{figure}[H]
  \centering
  \includegraphics[scale=0.5]{images/train_loss_betas.png}
- \caption{Training loss for different valus of $\beta$ parameter.}
+ \caption{Training loss for different valus of $\beta$ parameter. The curves correspond to $\beta=0.001,0.01,0.1,1$ starting from the top.}
  % loss_comparison.png: 3002x2096 px, 300dpi, 25.42x17.75 cm, bb=0 0 720 50
  \label{fig:betas}
 \end{figure}
+
+\subsubsection{Training on more than one molecule}
+After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 molecules. I split the dataset into 80:10:10 ratios for training, validation, and testing; however, the test dataset ultimately went unused. Unfortunately, despite decrease of training loss, there was no improvement in validation loss and therefore no generalization.
+
+\begin{remark}
+ The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints, the gradient is computed in mini-batches. It's possible that an adaptation is required to make it work, which would turn it into a problem of stochastic bilevel optimization. Due to time constraints I did not manage to resolve the problem.
+\end{remark}
+
 
 \subsubsection{Summary of equilibrium propagation approach}
 Equilibrium propagation proved to be more successful than Jacobian approach. I managed to decrease the implicit loss on one molecule, but more work needs to be done to make training on full dataset possible.
@@ -509,12 +517,6 @@ Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotte
 \end{figure}
 
 
-\subsubsection{Training on more than one molecule}
-After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 molecules. I split the dataset into 80:10:10 ratios for training, validation, and testing; however, the test dataset ultimately went unused. Unfortunately, despite decrease of training loss, there was no improvement in validation loss and therefore no generalization.
-
-\begin{remark}
- The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints, the gradient is computed in mini-batches. It's possible that an adaptation is required to make it work, which would turn it into a problem of stochastic bilevel optimization. Due to time constraints I did not manage to resolve the problem.
-\end{remark}
 
 
 \clearpage
@@ -547,7 +549,7 @@ I used a standard Graphormer model, which was trained on combination of QMUGS an
 To obtain the fixed I used projected gradient descent with momentum with learning rate $\alpha = 5\cdot 10^{-3}$ and momentum $\beta = 0.9$. I ran the algorithm until gradient norm fell below tolerance threshold, which in most cases was set as $\epsilon = 10^{-4}$. The starting point was set to $p_{gs}$ and the maximum number of gradient descent steps was set to $100$.
 
 \subsection{Fine-tuning on single molecule}
-I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$ for $4$ epochs. Each epoch consisted of $80$ weight updates.
+I trained the model with ADAM algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$ for $4$ epochs. Each epoch consisted of $80$ weight updates.
 
 
 \subsection{Fixed point correction}\label{sec:fpc}
