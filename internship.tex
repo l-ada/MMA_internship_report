@@ -56,18 +56,18 @@ Two approaches to gradient computation were implemented: equilibrium propagation
 
 
 %  Since $E(\theta, p)$ is a approximation of physical potential, it's reasonable to assume that hessian is positive-definite at the minimum.
-
- ScientificAI group is currently focusing on applying deep learning to orbital-free density functional theory (OF-DFT).
+ScientificAI group is located at Interdisciplinary Center for Scientific Computing (IWR), which is an interdisciplinary research center for Scientific Computing.
+The group is currently focusing on applying deep learning to orbital-free density functional theory (OF-DFT).
 
  To accurately predict molecular properties, quantum mechanics formalism can be employed to solve for the electronic structure, but for big molecules this approach is not tractable.
 
-However a theorem by Hohenberg-Kohn has shown that all that's needed to know the electronic structure is the ground state electron density $\rho_{gs}$ and that there exists an energy functional such that
+However a theorem by Hohenberg-Kohn has shown that all that's required to know the electronic structure is the ground state electron density $\rho_{gs}$ and that there exists an energy functional such that
 \begin{equation*}
  \rho_{gs} = \argmin_\rho E[\rho].
 \end{equation*}
 
 
-Exact form of the energy functional $E[\rho]$ remains unknown. The goal of  project is to approximate the energy functional $E[\rho]$ using a deep learning model (a surrogate functional) denoted as $E(\theta, \rho)$.
+Exact form of the energy functional $E[\rho]$ remains unknown. The goal of  project is to approximate the energy functional $E[\rho]$ using a deep learning model (a surrogate functional) denoted as $E(\theta, \rho)$, which is then used to obtain ground state density by gradient descent.
 
 If successful, this would enable the computation of the ground-state electron density with a complexity of $O(n)$, thereby allowing for efficient simulations of large molecules. Since the exact ground state is not always known, the model must be capable of converging from a wide range of initial starting points.
 
@@ -510,26 +510,26 @@ Figure \ref{fig:stability} shows a plot of the number of unconverged runs plotte
 
 
 \subsubsection{Training on more than one molecule}
-After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 molecules. I split the dataset in 80:10:10 ratios of train, validation and test, although test dataset ended up not being used. Regrettably, although train loss decreased, there was no improvement in validation loss and therefore no generalization.
+After resolving stability issue I tested equilibrium propagation approach on a sample containing 180 molecules. I split the dataset into 80:10:10 ratios for training, validation, and testing; however, the test dataset ultimately went unused. Unfortunately, despite decrease of training loss, there was no improvement in validation loss and therefore no generalization.
 
 \begin{remark}
- The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints the gradient is computed in mini-batches. It's possible, than an adaptation is required to make it work, which would make it into a problem of \textbf{stochastic bilevel optimization}. Due to time constraints I did not manage to resolve the problem.
+ The problem \ref{bilevel} falls under \textbf{bilevel optimization}. However, due to memory and computational constraints, the gradient is computed in mini-batches. It's possible that an adaptation is required to make it work, which would turn it into a problem of stochastic bilevel optimization. Due to time constraints I did not manage to resolve the problem.
 \end{remark}
 
 
 \clearpage
 \section{Conclusions}
-During my internship at Hamprecht Lab, I implemented and tested two approaches to implicit loss calculations. I have found that Jacobian approach was not successful for fine-tuning and did not results in improvement of key metrics.
+During my internship at Hamprecht Lab, I implemented and tested two approaches to implicit loss calculations. I have found that Jacobian approach was not successful for fine-tuning and did not result in improvement of key metrics.
 
 In contrast, the equilibrium propagation approach successfully decreased targeted metrics. However, I encountered significant model training stability issues. After conducting an extensive literature search, I found the technique for alleviating the issues and adapted it to my setting.
 
-Therefore, equilibrium propagation was shown to be an alternative method for optimizing losses defined implicitly, even when the Jacobian approach doesn't work.
+Therefore, equilibrium propagation was shown to be an alternative method for optimizing losses defined implicitly, even when the Jacobian approach does not work.
 
 On a personal level, this experience taught me the importance of working with version control within a group and conducting thorough literature searches.
 
-Future work would involve investigating Jacobian approach further. Since both methods should give the exact same gradient the issue lies either in faulty implementation or some unforeseen complications.
-Since fine-tuning on multiple molecules currently faces significant challenges, it also requires additional work, both when it comes to training stability and model generalization.
-Last issue to mention is training speed. Currently, this approach is much too slow, to train on the whole dataset.
+Future work would involve investigating Jacobian approach further. Since both methods should yield the exact same gradient the issue lies either in faulty implementation or some unforeseen complications.
+Since fine-tuning on multiple molecules currently faces significant challenges, it also requires additional work, both regarding training stability and model generalization. 
+Lastly, another issue to mention is training speed. Currently, this approach is much too slow, to train on the whole dataset.
 
 \nocite{*}
 \bibliographystyle{plain}
