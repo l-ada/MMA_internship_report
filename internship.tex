@@ -371,14 +371,11 @@ I found out that strict thresholds on fixed point search hindered training compl
 \end{figure}
 
 
-
-TK DENOP PICTURES
-
 \subsubsection{Conjugate gradient}
 I implemented and tested conjugate gradient method for solving linear system. However, the algorithm rapidly diverged and proved to be unsuitable.
 \subsubsection{Summary of Jacobian appraoch}
 
- For reasons yet unknown to me I have not been able to make Jacobian approach work for the purpose of finetuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve. This suggests, that Jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate.
+ have not been able to make Jacobian approach perform for the purpose of fine-tuning the model. Despite loss function decreasing during course of the training, density difference during density optimization run did not improve.  This suggests, that Jacobian approach did not in fact move the fixed point $\pth$ to real ground state $p_{gs}$ or did it while making energy landscape much more difficult to navigate. I include more details  in section \ref{jacmat}.
 
 
 \section{ Equilibrium propagation}
@@ -395,7 +392,7 @@ where $\beta \in \R$.
 p_{\theta}^{\beta}:=\argmin_p T(\theta, p, \beta)
 \end{equation}
 \begin{remark}
- For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so $T$ has ... TK HOW TO WRITE should converge better
+ For $\beta>0$ the function $p \mapsto \beta \mathcal{L}(p)$ is strongly convex, so it acts as a regularizer.
  \end{remark}
  \begin{remark}
    Since $T(\theta,p,0) = E(\theta,p)$ we have $p_{\theta}^{0}=p_{\theta}$.
@@ -440,7 +437,6 @@ Analogically
  \frac{dG}{d\theta}=\frac{\partial T}{\partial \theta}(\theta, \pthb, \beta).
 \end{equation}
 
-TK Explain, why it's different iwe we switch back the order of derivatives.
 In the end we obtain
 \begin{align}
  \frac{d}{d\theta} \mathcal{L}(p_\theta) &=\frac{d}{d\theta}\frac{d}{d\beta}G(\theta,\beta)\big|_{\beta=0} = \frac{d}{d\beta}\frac{d}{d\theta}G(\theta,\beta)\big|_{\beta=0}=\\
@@ -477,9 +473,8 @@ where, as before, $P$ is a projection operator. Since $\inner{w}{\pthb}$ is does
 
 
 \subsection{Equilibrium propagation experiments}
-In contrast to Jacobian approach I managed to finetune the model on single molecule.
-The training loss decreased. What is more telling is that loss also decreased, when fixed point search was run from a different starting point.
-TK DENOP FOR EQPROP
+In contrast to Jacobian approach I managed to fine-tune the model on single molecule.
+The training loss decreased. What is more telling is that loss also decreased, when fixed point search was run from a different starting point, which wasn't the case for Jacobian approach.
 \subsubsection{Varying $\beta$ parameter}
 I tested equilibrium propagation for different values of parameter $\beta$.
 As shown in \ref{fig:betas}, choosing too small of a $\beta$ can negatively affect the performance.
@@ -533,14 +528,9 @@ Therefore, equilibrium propagation was shown to be an alternative method for opt
 On a personal level, this experience taught me the importance of working with version control within a group and conducting thorough literature searches.
 
 Future work would involve investigating Jacobian approach further. Since both methods should give the exact same gradient the issue lies either in faulty implementation or some unforeseen complications.
+Since fine-tuning on multiple molecules currently faces significant challenges, it also requires additional work, both when it comes to training stability and model generalization.
+Last issue to mention is training speed. Currently, this approach is much too slow, to train on the whole dataset.
 
-
-Future directions:
-TK make Jacobian approach work
-TK make fine-tuning work for full dataset
-TK implement warm starting
-TK resolve stability further
-TK tracking loss function improvements for different molecules is quite hard
 \nocite{*}
 \bibliographystyle{plain}
 \bibliography{references.bib}
@@ -558,12 +548,7 @@ To obtain the fixed I used projected gradient descent with momentum with learnin
 
 \subsection{Fine-tuning on single molecule}
 I trained the model with $Adam$ algorithm with learning rate equal to $10^{-7}$ and weight decay set to $0$ for $4$ epochs. Each epoch consisted of $80$ weight updates.
-% \subsubsection{Gradient calculation}
-% Gradients are obtained using automatic differentation
-% The algorithm for finding fixed point is projected gradient descent. Its starting point was set to ground state $p_{gs}$.
-% TK ADD threshold details
-%
-% Both vjp can be obtained efficiently using automatic differen in PyTorch, so naturally I preferred using matrix free methods.
+
 
 \subsection{Fixed point correction}\label{sec:fpc}
 Fixed point correction is a technique for stabilizing DEQ training. The technique is described in \cite{opticalflow}, \cite{geng2023torchdeq}
@@ -595,5 +580,26 @@ The derivative of function
 
 Therefore it's possible to calculate the derivative without materializing the full matrix using vector-jacobian and jacobian-vector product in PyTorch.
 
-I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence. This might  indicate, that jacobian possesses big eigenvalues, which is further corroborated by estimation made using power method.
+I also encountered divergence problems while using plain gradient descent and had to switch to ADAM optimizer to achieve convergence. This might  indicate, that jacobian possesses big eigenvalues, which is further corroborated direct eigenvalues computation.
+\subsection{Jacobian matrix}\label{jacmat}
+
+The jacobian matrix $\frac{\partial F}{\partial p}$ for the model both before and after training has one zero eigenvalue, both before and after training. All other eigenvalues are positive. Table below shows s the minimal and maximal eigenvalues of jacobian matrix.
+
+\begin{table}[htbp]
+\centering
+\begin{tabular}{lccc}
+\hline
+\textbf{Model} & \textbf{Smallest zero eigenvalue} & \textbf{Biggest eigenvalue} & \textbf{Condition Number} \\
+\hline
+Pre-trained & $4.55 \cdot 10^{-2}$ & $8.94 \cdot 10^2 $ & $\approx 20000$ \\
+Fine-tuned     & $6.67 \cdot 16^{-2}$ & $11.49\cdot 10^{2}$ & $\approx 17000$ \\
+\hline
+\end{tabular}
+\caption{Comparison of eigenvalues across models. The condition number is the ratio of the maximum eigenvalue to the minimum non-zero eigenvalue.}
+\label{tab:eivs}
+
+\end{table}
+The big condition number might explain failure of the jacobian approach and relative success of equilibrium propagation.
+
+
 \end{document}
