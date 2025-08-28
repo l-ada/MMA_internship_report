@@ -103,7 +103,7 @@ we can express the electron number as:
 
 \section{Problem statement}
 Notation: Let $E(\theta, M ,p)$ denote the energy model, with $\theta \in \R^k$ being model parameters, $M$ the molecule information, and $p=(p_1, \ldots ,p_n )\in \R^n$ electron density coefficients.  We assume that $E(\theta, M ,p)$ is smooth with respect to $\theta$ and $p$.
-By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative $\theta$, when all other arguments are held constant. Then $\pd{E}{p}$ is a row vector of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ is a matrix of size $n \times n$, and $\frac{\partial^2 E}{\partial \theta \partial p}$ is a matrix of size $n \times k $.
+By $\frac{d}{d\theta}$ we mean total derivative, while $\pd{}{\theta}$ denotes partial derivative $\theta$, when all other arguments are held constant. Then $\pd{E}{p}$ is a \textbf{row vector} of size $n$, hessian $\frac{\partial^2 E}{ \partial p^2 }$ is a matrix of size $n \times n$, and $\frac{\partial^2 E}{\partial \theta \partial p}$ is a matrix of size $n \times k $.
 
 
 \subsection{Goal of the project}
@@ -493,7 +493,7 @@ Equilibrium propagation proved to be more successful than Jacobian approach. I m
 \subsection{Stability issues}
 Implicit loss training falls under the framework of deep equilibrium model (DEQ). One of the issues plaguing DEQ models is training stability. As training goes on, fixed point search takes longer and longer. This is reported in \cite{opticalflow}, \cite{bai2021stabilizing}, \cite{burger2025dequify}, and \cite{geng2023torchdeq}. This was also the case for me when training multiple molecules; however, I did not encounter it when training on a single molecule.
 
-To alleviate the issue, I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction}. I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance; therefore, more work is required to make it suitable for fine-tuning.
+To alleviate the issue, I adapted a technique introduced in \cite{opticalflow} called \textbf{fixed point correction} (FPC). I am not aware of any explanation why the technique works. It stabilizes the training, although it can hurt performance; therefore, more work is required to make it suitable for fine-tuning.
 
 Implementation and details of the fixed point correction technique are described in section \ref{sec:fpc}.
 
