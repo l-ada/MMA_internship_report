@@ -64,8 +64,8 @@
       \frac{\partial L(p_{\theta})}{\partial \theta} = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right)^{-1} \cdot \frac{\partial}{\partial \theta}\big(\mathcal{P}\nabla_p E(\theta, p)\big)
     \]
     \item  $\mathcal{P}$ is the projection operator onto subspace $\langle w,p \rangle = N$.
-    \item we solve for $y = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right)^{-1}$
-    \item Memory and stability issues.
+    \item we solve for $y$ in linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$ or $yH = b$, $b =  -(p_{\theta}-p_{gs})$
+    \item this can be done with matrix free methods such as conjugate gradient, minimizing $\|yH + b \|^2$ etc.
   \end{itemize}
 \end{frame}
 
