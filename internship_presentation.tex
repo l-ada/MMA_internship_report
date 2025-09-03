@@ -12,10 +12,10 @@
 \bibliographystyle{plain}  % or another style like alpha, ieeetr, etc.
 % Title Page
 \title[Implicit Loss Fine-Tuning]{Fine-tuning with implicit loss}
-\author{Lukasz Adamowicz}
-% \institute[Heidelberg University]{M2 Mathématiques, Modélisation et Apprentissage \\ Internship at Hamprecht Lab, IWR Heidelberg}
-\date{August 28, 2025}
-
+\author{Łukasz Adamowicz}
+\institute[]{M2 Mathématiques, Modélisation et Apprentissage\\ Université Paris Cité \\ Internship at Hamprecht Lab, IWR Heidelberg \\
+}
+\date{\today}
 \begin{document}
 
 % Title slide
@@ -33,7 +33,7 @@
 \section{Problem Statement}
 \begin{frame}{General Optimization Problem}
   \begin{itemize}
-    \item Energy model: $E(\theta, M, p)$.
+    \item Our model: $E(\theta, M, p)$.
     \item Ground state density coefficients $p_{\theta}$ are fixed points:
     \[
       p_{\theta,i} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, M, p).
@@ -41,13 +41,14 @@
     \item Loss: $L(\theta) = \sum_{i=1}^{n} L_i(p_{\theta,i}) = \sum_{i=1}^{n} \frac{1}{2} \|p_{\theta,i} - p_{gs,i}\|^2$.
     \item Bilevel optimization problem across multiple molecules.
     \item Challenge: compute gradient of $L(\theta)$ with respect to model parameters.
+    \item Keywords: bilevel optimization, Deep Equilibrium Models
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Single Molecule Optimization Problem}
   \begin{itemize}
     \item For a single molecule $M$:
-    \item Fixed point equation: $p_{\theta} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, p)$.
+    \item Fixed point equation: $$p_{\theta} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, p)$$.
     \item Loss: $L(\theta) = L(p_{\theta}) = \frac{1}{2}\|p_{\theta} - p_{gs}\|^2$.
     \item Goal: Find $\theta^* = \arg\min_{\theta} L(\theta)$.
     \item Need to compute $\frac{dL}{d\theta}$ without direct differentiation through the fixed point finding process.
@@ -58,14 +59,14 @@
 \section{Jacobian Approach}
 \begin{frame}{Jacobian Approach}
   \begin{itemize}
-    \item Based on implicit function theorem.
-    \item Gradient formula:
+    \item Formula for gradient of the loss is:
     \[
       \frac{\partial L(p_{\theta})}{\partial \theta} = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right)^{-1} \cdot \frac{\partial}{\partial \theta}\big(\mathcal{P}\nabla_p E(\theta, p)\big)
     \]
-    \item  $\mathcal{P}$ is the projection operator onto subspace $\langle w,p \rangle = N$.
-    \item we solve for $y$ in linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$ or $yH = b$, $b =  -(p_{\theta}-p_{gs})$
-    \item this can be done with matrix free methods such as conjugate gradient, minimizing $\|yH + b \|^2$ etc.
+    \item  $\mathcal{P}$ is the projection operator onto subspace $\langle w,p \rangle = 0$.
+    \item Hessian $\left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right)$ is \textbf{not} invertible, we utilize pseudoinverse instead.
+    \item In practice, we solve for $y$ in linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$.
+    \item This is done with matrix-free methods
   \end{itemize}
 \end{frame}
 
@@ -74,7 +75,7 @@
     \item Training loss sometimes decreases, but diverges later.
     \item Conjugate gradient method failed.
     \item Did not improve density difference.
-    \item Jacobian has big spread of eigenvalues values
+    \item Jacobian has big both big ($\approx 1000$) and small ($\approx 0.001$) eigenvalues.
   \end{itemize}
 \end{frame}
 
