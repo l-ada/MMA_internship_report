@@ -39,9 +39,7 @@
       p_{\theta,i} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, M, p).
     \]
     \item Loss: $L(\theta) = \sum_{i=1}^{n} L_i(p_{\theta,i}) = \sum_{i=1}^{n} \frac{1}{2} \|p_{\theta,i} - p_{gs,i}\|^2$.
-    \item Bilevel optimization problem across multiple molecules.
-    \item Challenge: compute gradient of $L(\theta)$ with respect to model parameters.
-    \item Keywords: bilevel optimization, Deep Equilibrium Models
+    \item Keywords: bilevel optimization, stochastic bilevel optimization, Deep Equilibrium Models
   \end{itemize}
 \end{frame}
 
@@ -50,49 +48,47 @@
     \item For a single molecule $M$:
     \item Fixed point equation: $$p_{\theta} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, p)$$.
     \item Loss: $L(\theta) = L(p_{\theta}) = \frac{1}{2}\|p_{\theta} - p_{gs}\|^2$.
-    \item Goal: Find $\theta^* = \arg\min_{\theta} L(\theta)$.
-    \item Need to compute $\frac{dL}{d\theta}$ without direct differentiation through the fixed point finding process.
+    \item Goal: Minimize loss function $L(\theta)$.
+    \item In bilevel optimization terms minimizing $L(p_\theta)$ is outer problem and minimizing $E(\theta, p)$ is inner problem.
   \end{itemize}
 \end{frame}
 
 %------------------------------------------------------
 \section{Jacobian Approach}
 \begin{frame}{Jacobian Approach}
+TK notation for hessian?
+
   \begin{itemize}
     \item Formula for gradient of the loss is:
     \[
-      \frac{\partial L(p_{\theta})}{\partial \theta} = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right)^{-1} \cdot \frac{\partial}{\partial \theta}\big(\mathcal{P}\nabla_p E(\theta, p)\big)
+      \frac{\partial L(p_{\theta})}{\partial \theta} = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\big(\nabla_p E(\theta, p)\big)\right)^{-1} \cdot \frac{\partial}{\partial \theta}\big(\mathcal{P}\nabla_p E(\theta, p)\big)
     \]
     \item  $\mathcal{P}$ is the projection operator onto subspace $\langle w,p \rangle = 0$.
-    \item Hessian $\left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right)$ is \textbf{not} invertible, we utilize pseudoinverse instead.
-    \item In practice, we solve for $y$ in linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$.
-    \item This is done with matrix-free methods
+    \item Hessian $ \left(\frac{\partial}{\partial p}\mathcal{P}\big(\nabla_p E(\theta, p)\big)\right)$ is \textbf{not} invertible, we utilize pseudoinverse instead.
+    \item In practice, we solve the linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$.
+    \item This is done with matrix-free methods.
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Jacobian Results}
   \begin{itemize}
-    \item Training loss sometimes decreases, but diverges later.
-    \item Conjugate gradient method failed.
-    \item Did not improve density difference.
-    \item Jacobian has big both big ($\approx 1000$) and small ($\approx 0.001$) eigenvalues.
+    \item Training is very unstable, depends on inner problem hyperparameters.
+    \item Conjugate gradient method failed for solving linear equation failed
+    \item Even when training loss decreased, it did not improve network metrics.
+    \item Hessian has big both big ($\approx 1000$) and small ($\approx 0.001$) eigenvalues, plain gradient descent on $\|y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) + (p_{\theta}-p_{gs})\|^2$ fails, resorted to ADAM.
+    \item Overall, Jacobian approach did not work.
   \end{itemize}
 \end{frame}
 
-\begin{frame}
- \begin{center}
-    \includegraphics[width=0.8\textwidth]{images/loss_comparison.png} % Jacobian vs EqProp training loss
-  \end{center}
-\end{frame}
 
 
 %------------------------------------------------------
 \section{Equilibrium Propagation}
 \begin{frame}{Equilibrium Propagation}
   \begin{itemize}
-    \item Alternative gradient estimation method.
+    \item Alternative gradient estimation method, introduced in TK cite
     \item Define total energy: $T(\theta, p, \beta) = E(\theta, p) + \beta L(p)$.
-    \item Define $p_{\theta}^{\beta}$ as the fixed point:
+    \item Define $p_{\theta}^{\beta}$ as the fixed point of $T$.
     \[
       p_{\theta}^{\beta} = \arg\min_{p:\langle w,p \rangle = N} T(\theta, p, \beta) = \arg\min_{p:\langle w,p \rangle = N} [E(\theta, p) + \beta L(p)]
     \]
@@ -100,21 +96,25 @@
     \[
       \frac{d}{d\theta} L(p_{\theta}) = \lim_{\beta \to 0} \frac{1}{\beta} \Big[ \partial_{\theta}T(\theta, p^{\beta}_{\theta}, \beta) - \partial_{\theta}T(\theta, p^{0}_{\theta}, 0) \Big].
     \]
+    \item Approximate gradient numerically as finite difference of right-hand side (numerical derivative)
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Equilibrium Propagation Results}
   \begin{itemize}
-    \item Worked for fine-tuning on single molecule.
-    \item Loss decreased consistently.
-    \item Density difference decreased, but energy difference increases
+    \item Fine-tuned single molecule succesfully.
+    \item Can work, when Jacobian approach fails
+    \item Slower than Jacobian approach.
+    \item Original contribution: implement in DFT setting, comparison with Jacobian (IFT) approach.
+    \item More details and derivation in the report.
   \end{itemize}
 
 \end{frame}
 
 \begin{frame}
-   \begin{center}
-    \includegraphics[width=0.8\textwidth]{images/train_loss_betas.png} % EqProp with different beta
+
+ \begin{center}
+    \includegraphics[width=0.8\textwidth]{images/loss_comparison.png} % Jacobian vs EqProp training loss
   \end{center}
 \end{frame}
 
@@ -125,19 +125,22 @@
     \item Training stability deteriorates over time (known issue in DEQ models).
     \item Fixed point search takes longer and longer during training.
     \item There are techniques for alleviating the issue
+    \item Appears both in Jacobian and EqProp approaches.
+    \item Appears only, when trying to fine-tune on multiple molecules.
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Fixed Point Correction (Original Contribution)}
+\begin{frame}{Fixed Point Correction}
   \begin{itemize}
-    \item Technique: include intermediate trajectory points in loss.
-    \item Loss function:
+    \item Technique: include intermediate trajectory points in loss. First appears in TK CITE
+    \item Inner problem trajectory is $p_1, \ldots, p_T \approx p_\theta$.
+    \item Uniformly choose $n$ intermediate points and modify the loss function as
     \[
-      L_{FPC}(\theta) = \sum_{k} \gamma^{n-k} L(p_{i_k}),
+      L_{FPC}(\theta) = \sum_{k=1}^{n} \gamma^{n-k} L(p_{i_k}),
     \]
-    where $p_{i_k}$ are intermediate points.
+    \item Treat $p_{i_k}$ as fixed and calculate gradient using Jacobian approach.
     \item Helps stabilize training, but may reduce performance.
-    \item I modified it to be random
+    \item Original contribution: Adapt to EqProp, add stochasticity.
   \end{itemize}
 
 \end{frame}
@@ -152,16 +155,17 @@
 \section{Conclusions}
 \begin{frame}{Conclusions}
   \begin{itemize}
-    \item Jacobian approach: not effective for now, would be nice if it works
-    \item Equilibrium propagation: potentially viable
-    \item Training is very unstable and very slow
+    \item Jacobian approach: not working right now, badly conditioned problem.
+    \item Equilibrium propagation: works on single molecules.
+    \item Biggest problem is training stability, additional treatment is needed.
+    \item Training is very slow
 
   \end{itemize}
 \end{frame}
 
 \begin{frame}{End}
 \begin{center}
- Thanks for coming
+ Thank You for coming
 \end{center}
 \end{frame}
 \begin{frame}[allowframebreaks]{References}
