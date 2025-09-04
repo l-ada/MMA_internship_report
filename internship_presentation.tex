@@ -34,9 +34,9 @@
 \begin{frame}{General Optimization Problem}
   \begin{itemize}
     \item Our model: $E(\theta, M, p)$.
-    \item Ground state density coefficients $p_{\theta}$ are fixed points:
+    \item $p_{\theta,i}$ are fixed points:
     \[
-      p_{\theta,i} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, M, p).
+      p_{\theta,i} = \arg\min_{p:\langle w_i,p \rangle = N_i} E(\theta, M_i, p).
     \]
     \item Loss: $L(\theta) = \sum_{i=1}^{n} L_i(p_{\theta,i}) = \sum_{i=1}^{n} \frac{1}{2} \|p_{\theta,i} - p_{gs,i}\|^2$.
     \item Keywords: bilevel optimization, stochastic bilevel optimization, Deep Equilibrium Models
@@ -46,18 +46,16 @@
 \begin{frame}{Single Molecule Optimization Problem}
   \begin{itemize}
     \item For a single molecule $M$:
-    \item Fixed point equation: $$p_{\theta} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, p)$$.
+    \item Fixed point : $$p_{\theta} = \arg\min_{p:\langle w,p \rangle = N} E(\theta, p)$$.
     \item Loss: $L(\theta) = L(p_{\theta}) = \frac{1}{2}\|p_{\theta} - p_{gs}\|^2$.
     \item Goal: Minimize loss function $L(\theta)$.
-    \item In bilevel optimization terms minimizing $L(p_\theta)$ is outer problem and minimizing $E(\theta, p)$ is inner problem.
+    \item In bilevel optimization terms minimizing $L(p_\theta)$ is called an outer problem and minimizing $E(\theta, p)$ is an inner problem.
   \end{itemize}
 \end{frame}
 
 %------------------------------------------------------
 \section{Jacobian Approach}
 \begin{frame}{Jacobian Approach}
-TK notation for hessian?
-
   \begin{itemize}
     \item Formula for gradient of the loss is:
     \[
@@ -66,14 +64,14 @@ TK notation for hessian?
     \item  $\mathcal{P}$ is the projection operator onto subspace $\langle w,p \rangle = 0$.
     \item Hessian $ \left(\frac{\partial}{\partial p}\mathcal{P}\big(\nabla_p E(\theta, p)\big)\right)$ is \textbf{not} invertible, we utilize pseudoinverse instead.
     \item In practice, we solve the linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$.
-    \item This is done with matrix-free methods.
+    \item This is done with matrix-free methods, because materializing the matrix is slow.
   \end{itemize}
 \end{frame}
 
 \begin{frame}{Jacobian Results}
   \begin{itemize}
     \item Training is very unstable, depends on inner problem hyperparameters.
-    \item Conjugate gradient method failed for solving linear equation failed
+    \item Conjugate gradient method failed to solve linear equation
     \item Even when training loss decreased, it did not improve network metrics.
     \item Hessian has big both big ($\approx 1000$) and small ($\approx 0.001$) eigenvalues, plain gradient descent on $\|y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) + (p_{\theta}-p_{gs})\|^2$ fails, resorted to ADAM.
     \item Overall, Jacobian approach did not work.
@@ -86,17 +84,17 @@ TK notation for hessian?
 \section{Equilibrium Propagation}
 \begin{frame}{Equilibrium Propagation}
   \begin{itemize}
-    \item Alternative gradient estimation method, introduced in TK cite
-    \item Define total energy: $T(\theta, p, \beta) = E(\theta, p) + \beta L(p)$.
+    \item Alternative gradient estimation method (see bibliography for details).
+    \item Define total energy: $T(\theta, p, \beta) = E(\theta, p) + \beta \frac{1}{2}\|p-p_{gs}\|^2 = E(\theta, p) + \beta L(p)$
     \item Define $p_{\theta}^{\beta}$ as the fixed point of $T$.
     \[
-      p_{\theta}^{\beta} = \arg\min_{p:\langle w,p \rangle = N} T(\theta, p, \beta) = \arg\min_{p:\langle w,p \rangle = N} [E(\theta, p) + \beta L(p)]
+      p_{\theta}^{\beta} = \arg\min_{p:\langle w,p \rangle = N} T(\theta, p, \beta)
     \]
     \item Gradient formula:
     \[
       \frac{d}{d\theta} L(p_{\theta}) = \lim_{\beta \to 0} \frac{1}{\beta} \Big[ \partial_{\theta}T(\theta, p^{\beta}_{\theta}, \beta) - \partial_{\theta}T(\theta, p^{0}_{\theta}, 0) \Big].
     \]
-    \item Approximate gradient numerically as finite difference of right-hand side (numerical derivative)
+    \item Approximate gradient as finite difference of right-hand side (numerical derivative)
   \end{itemize}
 \end{frame}
 
@@ -105,7 +103,7 @@ TK notation for hessian?
     \item Fine-tuned single molecule succesfully.
     \item Can work, when Jacobian approach fails
     \item Slower than Jacobian approach.
-    \item Original contribution: implement in DFT setting, comparison with Jacobian (IFT) approach.
+    \item Original contribution: implement in DFT setting, comparison with Jacobian (IFT) approach
     \item More details and derivation in the report.
   \end{itemize}
 
@@ -132,13 +130,13 @@ TK notation for hessian?
 
 \begin{frame}{Fixed Point Correction}
   \begin{itemize}
-    \item Technique: include intermediate trajectory points in loss. First appears in TK CITE
+    \item Technique: include intermediate trajectory points in loss. Taken from DEQ literature.
     \item Inner problem trajectory is $p_1, \ldots, p_T \approx p_\theta$.
     \item Uniformly choose $n$ intermediate points and modify the loss function as
     \[
       L_{FPC}(\theta) = \sum_{k=1}^{n} \gamma^{n-k} L(p_{i_k}),
     \]
-    \item Treat $p_{i_k}$ as fixed and calculate gradient using Jacobian approach.
+    \item Treat $p_{i_k}$ as fixed points and calculate gradient using Jacobian approach.
     \item Helps stabilize training, but may reduce performance.
     \item Original contribution: Adapt to EqProp, add stochasticity.
   \end{itemize}
@@ -205,10 +203,10 @@ TK notation for hessian?
   \begin{itemize}
     \item Substituting back into our chain rule formula:
     \begin{align}
-      \frac{\partial L}{\partial \theta} &= (p_{\theta} - p_{gs})^T \cdot \frac{\partial p_{\theta}}{\partial \theta} \\
-      &= -(p_{\theta} - p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}_{\langle w,p \rangle = N}\nabla_p E(\theta, p_{\theta})\right)^{-1} \cdot \frac{\partial}{\partial \theta}\mathcal{P}_{\langle w,p \rangle = N}\nabla_p E(\theta, p_{\theta})
+      \frac{\partial L}{\partial \theta} &= (p_{\theta} - p_{gs}) \cdot \frac{\partial p_{\theta}}{\partial \theta} \\
+      &= -(p_{\theta} - p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p_{\theta})\right)^{-1} \cdot \frac{\partial}{\partial \theta}\mathcal{P}\nabla_p E(\theta, p_{\theta})
     \end{align}
-    \item The term $\frac{\partial}{\partial p}\mathcal{P}_{\langle w,p \rangle = N}\nabla_p E(\theta, p_{\theta})$ is the projected Hessian matrix of the energy function.
+
   \end{itemize}
 \end{frame}
 
@@ -226,7 +224,7 @@ TK notation for hessian?
 
 \begin{frame}{Equilibrium Propagation Derivation - Part 2}
   \begin{itemize}
-    \item Define function $G(\theta,\beta) = L(p_{\theta}^{\beta})$.
+    \item Define function $G(\theta,\beta) = T(\theta,p_{\theta}^{\beta}, \beta)$.
     \item There's symmetry of second derivatives $\frac{d}{d\beta}\frac{d}{d\theta} $ at $\beta = 0, \theta = \theta$
 
   \end{itemize}
