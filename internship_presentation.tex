@@ -39,7 +39,7 @@
       p_{\theta,i} = \arg\min_{p:\langle w_i,p \rangle = N_i} E(\theta, M_i, p).
     \]
     \item Loss: $L(\theta) = \sum_{i=1}^{n} L_i(p_{\theta,i}) = \sum_{i=1}^{n} \frac{1}{2} \|p_{\theta,i} - p_{gs,i}\|^2$.
-    \item Keywords: bilevel optimization, stochastic bilevel optimization, Deep Equilibrium Models
+    \item Keywords: bilevel optimization, stochastic bilevel optimization, Deep Equilibrium Models.
   \end{itemize}
 \end{frame}
 
@@ -59,11 +59,11 @@
   \begin{itemize}
     \item Formula for gradient of the loss is:
     \[
-      \frac{\partial L(p_{\theta})}{\partial \theta} = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\big(\nabla_p E(\theta, p)\big)\right)^{-1} \cdot \frac{\partial}{\partial \theta}\big(\mathcal{P}\nabla_p E(\theta, p)\big)
+      \frac{\partial L(p_{\theta})}{\partial \theta} = -(p_{\theta}-p_{gs}) \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\big(\frac{\partial}{\partial p} E(\theta, p)\big)\right)^{-1} \cdot \frac{\partial}{\partial \theta}\big(\mathcal{P}\frac{\partial}{\partial p} E(\theta, p)\big)
     \]
     \item  $\mathcal{P}$ is the projection operator onto subspace $\langle w,p \rangle = 0$.
-    \item Hessian $ \left(\frac{\partial}{\partial p}\mathcal{P}\big(\nabla_p E(\theta, p)\big)\right)$ is \textbf{not} invertible, we utilize pseudoinverse instead.
-    \item In practice, we solve the linear equation $ y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) = -(p_{\theta}-p_{gs})$.
+    \item Hessian $ \left(\frac{\partial}{\partial p}[\mathcal{P}\big(\frac{\partial}{\partial p} E(\theta, p)\big)]\right)$ is \textbf{not} invertible, we utilize pseudoinverse instead.
+    \item In practice, we solve the linear equation $ y \cdot \left(\frac{\partial}{\partial p}[\mathcal{P} \frac{\partial}{\partial p} E(\theta, p)]\right) = -(p_{\theta}-p_{gs})$.
     \item This is done with matrix-free methods, because materializing the matrix is slow.
   \end{itemize}
 \end{frame}
@@ -73,7 +73,7 @@
     \item Training is very unstable, depends on inner problem hyperparameters.
     \item Conjugate gradient method failed to solve linear equation
     \item Even when training loss decreased, it did not improve network metrics.
-    \item Hessian has big both big ($\approx 1000$) and small ($\approx 0.001$) eigenvalues, plain gradient descent on $\|y \cdot \left(\frac{\partial}{\partial p}\mathcal{P}\nabla_p E(\theta, p)\right) + (p_{\theta}-p_{gs})\|^2$ fails, resorted to ADAM.
+    \item Hessian has big both big ($\approx 1000$) and small ($\approx 0.001$) eigenvalues, plain gradient descent on $\|y \cdot \left(\frac{\partial}{\partial p}[\mathcal{P}\frac{\partial}{\partial p} E(\theta, p)]\right) + (p_{\theta}-p_{gs})\|^2$ fails, resorted to ADAM.
     \item Overall, Jacobian approach did not work.
   \end{itemize}
 \end{frame}
@@ -84,7 +84,7 @@
 \section{Equilibrium Propagation}
 \begin{frame}{Equilibrium Propagation}
   \begin{itemize}
-    \item Alternative gradient estimation method (see bibliography for details).
+    \item Alternative gradient estimation method (see \cite{eqprop}).
     \item Define total energy: $T(\theta, p, \beta) = E(\theta, p) + \beta \frac{1}{2}\|p-p_{gs}\|^2 = E(\theta, p) + \beta L(p)$
     \item Define $p_{\theta}^{\beta}$ as the fixed point of $T$.
     \[
@@ -130,7 +130,7 @@
 
 \begin{frame}{Fixed Point Correction}
   \begin{itemize}
-    \item Technique: include intermediate trajectory points in loss. Taken from DEQ literature.
+    \item Technique: include intermediate trajectory points in loss. Taken from \cite{opticalflow}.
     \item Inner problem trajectory is $p_1, \ldots, p_T \approx p_\theta$.
     \item Uniformly choose $n$ intermediate points and modify the loss function as
     \[
@@ -186,7 +186,7 @@
 
 \begin{frame}{Jacobian Gradient Derivation - Part 2}
   \begin{itemize}
-    \item At fixed point, we have: $\mathcal{P}\nabla_p E(\theta, p_{\theta}) = 0$.
+    \item At the fixed point, we have: $\mathcal{P}\nabla_p E(\theta, p_{\theta}) = 0$.
     \item Differentiating this constraint with respect to $\theta$:
     \begin{align}
       \frac{\partial}{\partial \theta}\left[\mathcal{P}_{\langle w,p \rangle = N}\nabla_p E(\theta, p_{\theta})\right] &= 0 \\
